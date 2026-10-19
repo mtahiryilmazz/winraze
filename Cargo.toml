@@ -2,8 +2,8 @@
 name = "derust"
 version = "0.1.0-beta"
 edition = "2021"
-authors = ["M. Tahir Yılmaz <YILABS>"]
-description = "YILABS DeRust: Modern, high-performance batch uninstaller & residual cleaner for Windows"
+authors = ["M. Tahir Yılmaz <YILLABS>"]
+description = "YILLABS DeRust: Modern, high-performance batch uninstaller & residual cleaner for Windows"
 
 [dependencies]
 winreg = "0.52"

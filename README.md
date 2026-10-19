@@ -1,4 +1,4 @@
-# 🛡️ YILABS DeRust
+# 🛡️ YILLABS DeRust
 
 <div align="center">
 
@@ -12,9 +12,9 @@
 [![Language](https://img.shields.io/badge/Language-TR%20%7C%20EN-purple.svg?style=flat-square)](https://github.com/mtahiryilmazz)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-*Developed by **[YILABS](https://github.com/mtahiryilmazz)** · Authored by **M. Tahir Yılmaz***
+*Developed by **[YILLABS](ORGANIZATION.md)** · Authored by **M. Tahir Yılmaz***
 
-[Features](#-features--özellikler) • [Roadmap](ROADMAP.md) • [Changelog](CHANGELOG.md) • [Quick Start](#-quick-start--hızlı-başlangıç) • [Architecture](#-9-step-pipeline-architecture)
+[Features](#-features--özellikler) • [Roadmap](ROADMAP.md) • [Changelog](CHANGELOG.md) • [Organization](ORGANIZATION.md) • [Quick Start](#-quick-start--hızlı-başlangıç) • [Architecture](#-9-step-pipeline-architecture)
 
 </div>
 
@@ -22,15 +22,15 @@
 
 > [!NOTE]
 > **Beta Aşamasındadır (Public Beta):**  
-> YILABS DeRust şu an aktif geliştirme aşamasındadır (**v0.1.0-beta**). Karşılaştığınız hataları veya önerilerinizi [GitHub Issues](https://github.com/mtahiryilmazz) üzerinden paylaşabilirsiniz. Gelecek özellik planlaması için **[ROADMAP.md](ROADMAP.md)** dosyasını inceleyin.
+> YILLABS DeRust şu an aktif geliştirme aşamasındadır (**v0.1.0-beta**). Karşılaştığınız hataları veya önerilerinizi [GitHub Issues](https://github.com/mtahiryilmazz/derust/issues) üzerinden paylaşabilirsiniz. Gelecek özellik planlaması için **[ROADMAP.md](ROADMAP.md)** dosyasını inceleyin.
 
 ---
 
-## 🌟 What is YILABS DeRust?
+## 🌟 What is YILLABS DeRust?
 
 Windows'un dahili "Program Ekle veya Kaldır" arayüzü çoğu zaman arkasında gigabaytlarca artık veri, yüzlerce yetim kayıt defteri anahtarı ve arka planda çalışmaya devam eden kilitli servisler bırakır.
 
-**YILABS DeRust**, popüler Windows kaldırıcı *Uninstalr* mimarisinden ilham alarak **YILABS** çatısı altında sıfırdan geliştirilmiş, tek tıklamayla birden çok yazılımı sessizce ve kökten temizleyen **yüksek performanslı bir açık kaynak masaüstü güç aracıdır**.
+**YILLABS DeRust**, popüler Windows kaldırıcı *Uninstalr* mimarisinden ilham alarak **YILLABS** çatısı altında sıfırdan geliştirilmiş, tek tıklamayla birden çok yazılımı sessizce ve kökten temizleyen **yüksek performanslı bir açık kaynak masaüstü güç aracıdır**.
 
 ---
 
@@ -64,7 +64,7 @@ Windows'un dahili "Program Ekle veya Kaldır" arayüzü çoğu zaman arkasında 
 Proje doğrudan çift tıklanarak çalışmaya hazır tek bir bağımsız Windows çalıştırılabilir dosyası (`.exe`) olarak üretilmiştir:
 
 ### 🖥️ Grafik Arayüzü (GUI) Başlatma
-Doğrudan [DeRust.exe](file:///C:/Users/BT/.gemini/antigravity-ide/scratch/uninstalr-rs/DeRust.exe) (veya `YILABS-DeRust.exe`) dosyasına **çift tıklayarak** masaüstü uygulamasını başlatabilirsiniz.
+Doğrudan [DeRust.exe](file:///C:/Users/BT/.gemini/antigravity-ide/scratch/uninstalr-rs/DeRust.exe) (veya `YILLABS-DeRust.exe`) dosyasına **çift tıklayarak** masaüstü uygulamasını başlatabilirsiniz.
 
 PowerShell üzerinden çalıştırmak için:
 ```powershell
@@ -101,6 +101,7 @@ Aynı ikili dosya arka plan otomasyonları ve sunucular için zengin parametre d
 
 * 🧭 Gelecek sürümler ve geliştirme takvimi: **[ROADMAP.md](ROADMAP.md)**
 * 📝 Sürüm değişiklik geçmişi: **[CHANGELOG.md](CHANGELOG.md)**
+* 🏛️ Organizasyon ve Alt Birimler: **[ORGANIZATION.md](ORGANIZATION.md)**
 
 ---
 
@@ -122,6 +123,7 @@ cargo build --release
 
 ## 🏢 Hakkında & Lisans
 
-* **Çatı Marka:** **[YILABS](https://github.com/mtahiryilmazz)**
-* **Geliştirici:** M. Tahir Yılmaz ([@mtahiryilmazz](https://github.com/mtahiryilmazz))
-* **Lisans:** [MIT License](LICENSE) — Açık kaynak ve özgürce kullanılabilir.
+* **Çatı Organizasyon:** **[YILLABS](ORGANIZATION.md)**
+* **Bağlı Birim:** **YILLABS Systems** (İşletim sistemi araçları, performans ve sistem optimizasyonu)
+* **Geliştirici & Kurucu:** M. Tahir Yılmaz ([@mtahiryilmazz](https://github.com/mtahiryilmazz))
+* **Lisans:** [MIT License](LICENSE) — Telif Hakkı (c) 2026 YILLABS. Açık kaynak ve özgürce kullanılabilir.

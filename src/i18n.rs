@@ -80,8 +80,8 @@ pub struct Translations {
 }
 
 pub const TURKISH_TRANSLATIONS: Translations = Translations {
-    app_title: "YILABS DeRust",
-    app_subtitle: "Modern Toplu Kaldırıcı & Derin Kalıntı Temizleyici [Beta] · YILABS",
+    app_title: "YILLABS DeRust",
+    app_subtitle: "Modern Toplu Kaldırıcı & Derin Kalıntı Temizleyici [Beta] · YILLABS",
     search_hint: "Uygulama veya yayımcı ara...",
     stat_apps: "Kurulu Yazılımlar",
     stat_size: "Toplam Boyut",
@@ -134,8 +134,8 @@ pub const TURKISH_TRANSLATIONS: Translations = Translations {
 };
 
 pub const ENGLISH_TRANSLATIONS: Translations = Translations {
-    app_title: "YILABS DeRust",
-    app_subtitle: "Modern Batch Uninstaller & Deep Cleaner [Beta] · YILABS",
+    app_title: "YILLABS DeRust",
+    app_subtitle: "Modern Batch Uninstaller & Deep Cleaner [Beta] · YILLABS",
     search_hint: "Search apps or publishers...",
     stat_apps: "Installed Software",
     stat_size: "Total Size",

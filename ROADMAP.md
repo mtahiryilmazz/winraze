@@ -1,6 +1,6 @@
-# 🗺️ YILABS DeRust — Product Roadmap
+# 🗺️ YILLABS DeRust — Product Roadmap
 
-This document outlines the strategic development plan and upcoming feature milestones for **YILABS DeRust**.
+This document outlines the strategic development plan and upcoming feature milestones for **YILLABS DeRust**.
 
 ---
 
@@ -74,7 +74,7 @@ This document outlines the strategic development plan and upcoming feature miles
 ## 📍 Phase 5: v1.0 General Availability (GA Release)
 
 - [ ] **Official Package Distribution**:
-  - Windows Package Manager (`winget install YILABS.DeRust`).
+  - Windows Package Manager (`winget install YILLABS.DeRust`).
   - Chocolatey and Scoop manifest submissions.
 - [ ] **Code Signing & Integrity**:
   - Digitally signed Windows executable and MSIX installer.

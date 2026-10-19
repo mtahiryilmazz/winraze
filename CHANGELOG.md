@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to **YILABS DeRust** will be documented in this file.
+All notable changes to **YILLABS DeRust** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🚀 Public Beta Release
 
-This marks the first public beta release of **YILABS DeRust**, an open-source, ultra-fast Windows batch uninstaller and deep residual cleaner inspired by the internal architecture of Uninstalr, developed under **YILABS**.
+This marks the first public beta release of **YILLABS DeRust**, an open-source, ultra-fast Windows batch uninstaller and deep residual cleaner inspired by the internal architecture of Uninstalr, developed under **YILLABS**.
 
 ### ✨ Added
 * **9-Step Deep Uninstallation Engine**:

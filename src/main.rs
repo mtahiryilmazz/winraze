@@ -16,9 +16,9 @@ use uninstaller::UninstallationEngine;
 
 #[derive(Parser)]
 #[command(name = "derust")]
-#[command(author = "M. Tahir Yılmaz <YILABS>")]
+#[command(author = "M. Tahir Yılmaz <YILLABS>")]
 #[command(version = "0.1.0-beta")]
-#[command(about = "YILABS DeRust: Modern, high-performance batch uninstaller & deep residual cleaner for Windows")]
+#[command(about = "YILLABS DeRust: Modern, high-performance batch uninstaller & deep residual cleaner for Windows")]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,

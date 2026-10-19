@@ -780,12 +780,12 @@ pub fn run_gui() -> eframe::Result<()> {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1180.0, 760.0])
             .with_min_inner_size([880.0, 540.0])
-            .with_title("YILABS DeRust (v0.1.0-beta) - Batch Uninstaller & Deep Cleaner"),
+            .with_title("YILLABS DeRust (v0.1.0-beta) - Batch Uninstaller & Deep Cleaner"),
         ..Default::default()
     };
 
     eframe::run_native(
-        "YILABS_DeRust",
+        "YILLABS_DeRust",
         native_options,
         Box::new(|cc| Ok(Box::new(UninstalrApp::new(cc)))),
     )
