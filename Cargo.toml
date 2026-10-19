@@ -1,0 +1,27 @@
+[package]
+name = "uninstalr-rs"
+version = "0.1.0"
+edition = "2021"
+authors = ["M. Tahir Yılmaz <YILABS Studio>"]
+description = "High-performance native Windows batch uninstaller & residual cleaner by YILABS Studio"
+
+[dependencies]
+winreg = "0.52"
+walkdir = "2.5"
+clap = { version = "4.5", features = ["derive"] }
+colored = "2.1"
+indicatif = "0.17"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+regex = "1.10"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_System_Threading",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_Storage_FileSystem"
+] }
+eframe = "0.29"
+
+[[bin]]
+name = "Uninstalr"
+path = "src/main.rs"
