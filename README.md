@@ -1,114 +1,127 @@
-# 🛡️ YILABS Uninstaller
+# 🛡️ YILABS DeRust
 
 <div align="center">
 
-**Modern, Yüksek Performanslı Toplu Yazılım Kaldırıcı & Derin Kalıntı Temizleyici**  
-*Ultra-Fast Native Windows Batch Uninstaller & Deep Cleaner*
+**The High-Performance Native Windows Batch Uninstaller & Deep Cleaner**  
+*Sistemin Dijital Pasını Söken Modern Toplu Kaldırıcı*
 
+[![Version](https://img.shields.io/badge/Version-v0.1.0--beta-yellow.svg?style=flat-square)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4.svg?style=flat-square&logo=windows)](https://github.com/mtahiryilmazz)
 [![UI](https://img.shields.io/badge/Design-WinUI%203%20%7C%20Fluent-blue.svg?style=flat-square)](https://github.com/mtahiryilmazz)
 [![Engine](https://img.shields.io/badge/Architecture-9--Step%20Pipeline-success.svg?style=flat-square)](https://github.com/mtahiryilmazz)
 [![Language](https://img.shields.io/badge/Language-TR%20%7C%20EN-purple.svg?style=flat-square)](https://github.com/mtahiryilmazz)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-*Crafted with precision by **[YILABS Studio](https://github.com/mtahiryilmazz)** (M. Tahir Yılmaz)*
+*Developed by **[YILABS](https://github.com/mtahiryilmazz)** · Authored by **M. Tahir Yılmaz***
+
+[Features](#-features--özellikler) • [Roadmap](ROADMAP.md) • [Changelog](CHANGELOG.md) • [Quick Start](#-quick-start--hızlı-başlangıç) • [Architecture](#-9-step-pipeline-architecture)
 
 </div>
 
 ---
 
-## 🌟 YILABS Uninstaller Nedir?
-
-**YILABS Uninstaller**, popüler Windows kaldırıcı **Uninstalr**'ın çalışma mantığı tersine mühendislikle çözümlenerek, **YILABS Studio** çatısı altında modern sistem standartlarına uygun olarak sıfırdan geliştirilmiş yeni nesil bir masaüstü uygulamasıdır.
-
-Windows'un yerel "Program Ekle/Kaldır" arayüzünün geride bıraktığı yüzlerce yetim kayıt defteri anahtarını, veri klasörlerini (`AppData`, `ProgramData`), önbellek dosyalarını (`Prefetch`) ve kilitli servisleri **9 aşamalı tescilli boru hattı (9-step pipeline)** ile tamamen ortadan kaldırır.
+> [!NOTE]
+> **Beta Aşamasındadır (Public Beta):**  
+> YILABS DeRust şu an aktif geliştirme aşamasındadır (**v0.1.0-beta**). Karşılaştığınız hataları veya önerilerinizi [GitHub Issues](https://github.com/mtahiryilmazz) üzerinden paylaşabilirsiniz. Gelecek özellik planlaması için **[ROADMAP.md](ROADMAP.md)** dosyasını inceleyin.
 
 ---
 
-## 🪟 Öne Çıkan Özellikler
+## 🌟 What is YILABS DeRust?
 
-### 1. 🎨 Modern WinUI 3 / Fluent Tasarım Dili
-* **Mica & Acrylic Karanlık Arayüz:** Gözü yormayan modern koyu tema paleti ve yumuşatılmış köşeler.
-* **Üst Panel KPI İstatistik Kartları:** Toplam yazılım sayısı, diskte kaplanan gerçek alan, seçilen alan ve sahipsiz kalıntılar için anlık bilgi kartları.
-* **Fluent Kart-Karo (Card Tiles) Mimarisi:** Düzensiz tablolar yerine her yazılım için hover efektli, tip etiketli (`Win32`, `MSI`, `Store`, `Leftover`) ve boyut çipli modern kartlar.
-* **Segmented Filter Bar:** `Tümü`, `Win32`, `MSI`, `Store / UWP` ve `Kalıntılar` arasında tek tıkla akıcı geçiş.
-* **Canlı Arama Çubuğu:** Yazılım veya yayımcı adını yazarken anında sonuç veren hızlı filtreleme.
+Windows'un dahili "Program Ekle veya Kaldır" arayüzü çoğu zaman arkasında gigabaytlarca artık veri, yüzlerce yetim kayıt defteri anahtarı ve arka planda çalışmaya devam eden kilitli servisler bırakır.
+
+**YILABS DeRust**, popüler Windows kaldırıcı *Uninstalr* mimarisinden ilham alarak **YILABS** çatısı altında sıfırdan geliştirilmiş, tek tıklamayla birden çok yazılımı sessizce ve kökten temizleyen **yüksek performanslı bir açık kaynak masaüstü güç aracıdır**.
+
+---
+
+## ✨ Features / Özellikler
+
+### 1. 🪟 WinUI 3 & Fluent Desktop GUI
+* **Mica & Acrylic Karanlık Arayüz:** Windows 11 Fluent tasarım standartlarına uygun, yuvarlatılmış köşeler ve modern renk paleti.
+* **Üst Panel KPI İstatistik Kartları:** Toplam yazılım adedi, kaplanan gerçek disk alanı, kaldırılmak üzere seçilen alan ve sahipsiz kalıntılar için anlık sayaçlar.
+* **Modern Kart-Karo (Card Tiles) Mimarisi:** Düzensiz tablolar yerine tip etiketi (`Win32`, `MSI`, `Store`, `Leftover`), yayımcı bilgisi ve altın sarısı disk boyutu çipine sahip akıcı kartlar.
+* **Segmented Filter Bar:** `Tümü`, `Win32`, `MSI`, `Store / UWP` ve `Kalıntılar` arasında tek tıkla anında filtreleme.
+* **Sağ Açılır Derin İnceleme Çekmecesi:** Herhangi bir karta tıklandığında kurulum dizini, kaldırıcı komutu, kısayollar ve tespit edilen tüm kayıt defteri anahtarlarını önizleme imkânı.
 
 ### 2. 🌐 Tam Yerelleştirme (Localization - TR / EN)
-* **Çift Dil Desteği:** 🇹🇷 **Türkçe** ve 🇬🇧 **English**.
-* Üst çubuktaki tek bir butona basarak arayüzün dilini (tüm menüler, kaldırma adımları, durum mesajları ve ayarlar dahil) anında değiştirebilme.
+* **Çift Dil:** 🇹🇷 **Türkçe** (Varsayılan) ve 🇬🇧 **English**.
+* Üst çubuktaki tek tıkla `🇹🇷 Türkçe` / `🇬🇧 English` butonu veya ayarlar menüsü üzerinden tüm arayüzü anında tercüme edebilme.
 
-### 3. ⚙️ 9 Aşamalı Derin Kaldırma Boru Hattı
-1. **Adım 1 & 2 (AutoKill):** İlgili programın çalışan süreçlerini (`TerminateProcess`) ve Windows servislerini (`sc stop`) otomatik kapatır.
-2. **Adım 3 (Kısayollar):** Başlat Menüsü ve Masaüstü `.lnk`/`.url` dosyalarını temizler.
-3. **Adım 4 (Sessiz MSI):** MSI paketlerini sessiz modda (`msiexec /X {GUID} /quiet /norestart`) tetikler.
-4. **Adım 5 (Yerel Kaldırıcı):** InnoSetup (`/VERYSILENT /NORESTART`), NSIS (`/S`) sessiz anahtarlarıyla kaldırır.
-5. **Adım 6 (AppX Store):** Modern paketleri `Remove-AppxPackage` ile temizler.
-6. **Adım 7 (Kayıt Defteri Temizliği):** `HKCU`, `HKLM`, `Wow6432Node`, `AppCompatFlags` altındaki tüm sahipsiz anahtarları siler.
-7. **Adım 8 (Dosya Sistemi & Kilitli Dosyalar):** Kurulum ve `AppData` klasörlerini siler; kilitli kalanları `MoveFileExW(..., MOVEFILE_DELAY_UNTIL_REBOOT)` ile yeniden başlatmada temizlenmek üzere kuyruğa alır.
-8. **Adım 9 (Post-Processing):** Boş kalan ana klasörleri ve Windows Prefetch (`.pf`) kayıtlarını temizler.
+### 3. ⚙️ 9 Aşamalı Derin Kaldırma Boru Hattı (The 9-Step Pipeline)
+1. **Adım 1 & 2 (AutoKill):** Kaldırılacak yazılımın dosyalarını kilitleyen süreçleri (`ToolHelp32` API) ve Windows servislerini (`sc stop`) otomatik tespit edip sonlandırır.
+2. **Adım 3 (Kısayollar):** Başlat Menüsü ve Masaüstü üzerindeki `.lnk`/`.url` dosyalarını temizler.
+3. **Adım 4 (Sessiz MSI):** MSI paketlerini otomatik tespit edip sessiz modda (`msiexec /X {GUID} /quiet /norestart /passive`) çalıştırır.
+4. **Adım 5 (Yerel Kaldırıcı):** InnoSetup (`/VERYSILENT /NORESTART`), NSIS (`/S`) sessiz anahtarlarını enjekte ederek çalıştırır.
+5. **Adım 6 (AppX Store):** UWP / Microsoft Store paketlerini `Remove-AppxPackage` ile temizler.
+6. **Adım 7 (Derin Kayıt Defteri Temizliği):** `HKCU`, `HKLM`, `Wow6432Node`, `AppCompatFlags` altındaki tüm ilişkili anahtarları siler.
+7. **Adım 8 (Dosya Sistemi & Kilitli Dosyalar):** Kurulum dizinini ve `AppData` klasörlerini siler; işletim sistemi tarafından kilitlenen dosyaları Windows API'si `MoveFileExW(..., MOVEFILE_DELAY_UNTIL_REBOOT)` ile yeniden başlatmada temizlenmek üzere kuyruğa alır.
+8. **Adım 9 (Post-Processing & Pruning):** Boş kalan üst klasörleri, kırık kısayolları ve Windows Prefetch (`.pf`) önbellek kayıtlarını budar.
 
 ---
 
-## 🚀 Çalıştırma ve Kullanım
+## 🚀 Quick Start / Hızlı Başlangıç
 
-Proje doğrudan çift tıklanarak çalışmaya hazır tek bir bağımsız `.exe` olarak derlenmiştir:
+Proje doğrudan çift tıklanarak çalışmaya hazır tek bir bağımsız Windows çalıştırılabilir dosyası (`.exe`) olarak üretilmiştir:
 
 ### 🖥️ Grafik Arayüzü (GUI) Başlatma
-Doğrudan [YILABS-Uninstaller.exe](file:///C:/Users/BT/.gemini/antigravity-ide/scratch/uninstalr-rs/YILABS-Uninstaller.exe) dosyasına çift tıklayarak masaüstü arayüzünü açabilirsiniz.
+Doğrudan [DeRust.exe](file:///C:/Users/BT/.gemini/antigravity-ide/scratch/uninstalr-rs/DeRust.exe) (veya `YILABS-DeRust.exe`) dosyasına **çift tıklayarak** masaüstü uygulamasını başlatabilirsiniz.
 
-PowerShell'den başlatmak için:
+PowerShell üzerinden çalıştırmak için:
 ```powershell
-.\YILABS-Uninstaller.exe
+cd "C:\Users\BT\.gemini\antigravity-ide\scratch\uninstalr-rs"
+.\DeRust.exe
 ```
 
 ### ⌨️ Komut Satırı (CLI) Modu
-Aynı ikili dosya terminal üzerinden arka plan otomasyonları için de kullanılabilir:
+Aynı ikili dosya arka plan otomasyonları ve sunucular için zengin parametre desteğine sahiptir:
 
 ```powershell
-# Kurulu tüm yazılımları listeleme
-.\YILABS-Uninstaller.exe list
+# 1. Kurulu tüm uygulamaları ve disk alanlarını listeleme
+.\DeRust.exe list
 
-# Belirli bir uygulamayı filtreleme
-.\YILABS-Uninstaller.exe list --filter "Chrome"
+# 2. Belirli bir uygulamayı arama
+.\DeRust.exe list --filter "Chrome"
 
-# Uygulamanın tüm kalıntılarını ve kayıt anahtarlarını inceleme (Review)
-.\YILABS-Uninstaller.exe inspect "Program Adı"
+# 3. Bir uygulamanın kayıt anahtarlarını ve kalıntılarını derinlemesine inceleme
+.\DeRust.exe inspect "Uygulama Adı"
 
-# Simülasyon modunda test etme (Sisteme hiçbir müdahale yapmaz)
-.\YILABS-Uninstaller.exe uninstall "Program Adı" --dry-run
+# 4. Simülasyon modu (Sistemde hiçbir dosya silmeden adımları önizler)
+.\DeRust.exe uninstall "Uygulama Adı" --dry-run
 
-# Gerçek toplu kaldırma
-.\YILABS-Uninstaller.exe uninstall "Program 1" "Program 2"
+# 5. Gerçek ve sessiz toplu kaldırma
+.\DeRust.exe uninstall "Uygulama 1" "Uygulama 2"
 
-# Yalnızca sahipsiz kalıntıları tarama
-.\YILABS-Uninstaller.exe leftovers
+# 6. Yalnızca sahipsiz kalıntıları (leftovers) tarama
+.\DeRust.exe leftovers
 ```
+
+---
+
+## 🗺️ Roadmap & Changelog
+
+* 🧭 Gelecek sürümler ve geliştirme takvimi: **[ROADMAP.md](ROADMAP.md)**
+* 📝 Sürüm değişiklik geçmişi: **[CHANGELOG.md](CHANGELOG.md)**
 
 ---
 
 ## 🛠️ Kaynak Koddan Derleme (Building from Source)
 
-Eğer projeyi sıfırdan kendiniz derlemek isterseniz:
-
 ```powershell
-# 1. Repoyu klonlayın
-git clone https://github.com/mtahiryilmazz/yilabs-uninstaller.git
-cd yilabs-uninstaller
+# Repoyu klonlayın
+git clone https://github.com/mtahiryilmazz/derust.git
+cd derust
 
-# 2. Release modunda derleyin
+# Release modunda derleyin
 cargo build --release
 
-# 3. Çalıştırın
-.\target\release\Uninstalr.exe
+# Derlenen binary: target/release/DeRust.exe
+.\target\release\DeRust.exe
 ```
 
 ---
 
-## 🏢 YILABS Studio Hakkında
+## 🏢 Hakkında & Lisans
 
-**YILABS Studio**, modern, yüksek performanslı ve tavizsiz mühendislik standartlarına sahip yazılım araçları geliştiren bağımsız bir teknoloji stüdyosudur.
-
+* **Çatı Marka:** **[YILABS](https://github.com/mtahiryilmazz)**
 * **Geliştirici:** M. Tahir Yılmaz ([@mtahiryilmazz](https://github.com/mtahiryilmazz))
-* **Stüdyo:** YILABS Studio
-* **Lisans:** [MIT License](LICENSE)
+* **Lisans:** [MIT License](LICENSE) — Açık kaynak ve özgürce kullanılabilir.

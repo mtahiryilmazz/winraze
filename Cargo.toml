@@ -1,9 +1,9 @@
 [package]
-name = "uninstalr-rs"
-version = "0.1.0"
+name = "derust"
+version = "0.1.0-beta"
 edition = "2021"
-authors = ["M. Tahir Yılmaz <YILABS Studio>"]
-description = "High-performance native Windows batch uninstaller & residual cleaner by YILABS Studio"
+authors = ["M. Tahir Yılmaz <YILABS>"]
+description = "YILABS DeRust: Modern, high-performance batch uninstaller & residual cleaner for Windows"
 
 [dependencies]
 winreg = "0.52"
@@ -23,5 +23,5 @@ windows = { version = "0.58", features = [
 eframe = "0.29"
 
 [[bin]]
-name = "Uninstalr"
+name = "DeRust"
 path = "src/main.rs"

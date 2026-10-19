@@ -15,7 +15,7 @@ impl TerminalUI {
    | |  | || |___ / ___ \| |_) |__) |
    |_| |___|_____/_/   \_\____/____/ 
                                      
-   YILABS Uninstaller · YILABS Studio
+      YILABS DeRust · v0.1.0-beta
 "#.cyan().bold());
     }
 

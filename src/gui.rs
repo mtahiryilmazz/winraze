@@ -218,14 +218,17 @@ impl eframe::App for UninstalrApp {
             .show(ctx, |ui| {
                 // Row 1: Logo, Title, Language Switcher and Actions
                 ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new("🛡️").size(24.0));
+                    ui.label(egui::RichText::new("🛡️").size(26.0));
                     ui.vertical(|ui| {
-                        ui.heading(
-                            egui::RichText::new(t.app_title)
-                                .color(egui::Color32::from_rgb(244, 244, 245))
-                                .strong()
-                                .size(20.0),
-                        );
+                        ui.horizontal(|ui| {
+                            ui.heading(
+                                egui::RichText::new(t.app_title)
+                                    .color(egui::Color32::from_rgb(244, 244, 245))
+                                    .strong()
+                                    .size(20.0),
+                            );
+                            render_pill_badge(ui, "BETA", egui::Color32::from_rgb(234, 179, 8));
+                        });
                         ui.label(
                             egui::RichText::new(t.app_subtitle)
                                 .color(egui::Color32::from_rgb(161, 161, 170))
@@ -777,12 +780,12 @@ pub fn run_gui() -> eframe::Result<()> {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1180.0, 760.0])
             .with_min_inner_size([880.0, 540.0])
-            .with_title("YILABS Uninstaller - Modern Batch Uninstaller & Deep Cleaner"),
+            .with_title("YILABS DeRust (v0.1.0-beta) - Batch Uninstaller & Deep Cleaner"),
         ..Default::default()
     };
 
     eframe::run_native(
-        "YILABS_Uninstaller",
+        "YILABS_DeRust",
         native_options,
         Box::new(|cc| Ok(Box::new(UninstalrApp::new(cc)))),
     )

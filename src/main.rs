@@ -15,10 +15,10 @@ use ui::TerminalUI;
 use uninstaller::UninstallationEngine;
 
 #[derive(Parser)]
-#[command(name = "yilabs-uninstaller")]
-#[command(author = "M. Tahir Yılmaz <YILABS Studio>")]
-#[command(version = "0.1.0")]
-#[command(about = "Ultra-fast native Windows software uninstaller & residual cleaner by YILABS Studio")]
+#[command(name = "derust")]
+#[command(author = "M. Tahir Yılmaz <YILABS>")]
+#[command(version = "0.1.0-beta")]
+#[command(about = "YILABS DeRust: Modern, high-performance batch uninstaller & deep residual cleaner for Windows")]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
