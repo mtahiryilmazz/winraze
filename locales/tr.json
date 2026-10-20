@@ -28,7 +28,7 @@
   "col_size": "Disk Alanı",
   "col_type": "Tür",
   "settings_title": "⚙️ Tercihler & Motor Ayarları",
-  "settings_autokill: "AutoKill: Dosyaları kilitleyen süreç ve servisleri otomatik sonlandır",
+  "settings_autokill": "AutoKill: Dosyaları kilitleyen süreç ve servisleri otomatik sonlandır",
   "settings_restorepoint": "Geri Yükleme Noktası: İşlem öncesi otomatik Sistem Geri Yükleme Noktası oluştur",
   "settings_regbackup": "Kayıt Defteri Yedeği: Silinen anahtarları .reg dosyası olarak yedekle (Geri Alabilme)",
   "settings_emptydirs": "AutoDelEmptyDirs: Kaldırma sonrası boş kalan dizinleri temizle",

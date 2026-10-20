@@ -6,7 +6,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 
 use crate::debloater::{BloatwareTarget, DebloaterEngine, KNOWN_BLOATWARE};
-use crate::i18n::{Language, Locales, Translations};
+use crate::i18n::{LocaleManager, Translations};
 use crate::model::{AppType, InstalledApp, ScanConfig, SystemHealthStats, UninstallOptions, UninstallReport};
 use crate::scanner::SystemScanner;
 use crate::ui::format_bytes;
@@ -64,7 +64,7 @@ pub struct UninstalrApp {
     is_scanning: bool,
     show_confirm_modal: bool,
     options: UninstallOptions,
-    current_lang: Language,
+    locale_manager: LocaleManager,
 
     // Debloater state
     debloat_status_message: Option<String>,
@@ -116,7 +116,7 @@ impl UninstalrApp {
             is_scanning: true,
             show_confirm_modal: false,
             options: UninstallOptions::default(),
-            current_lang: Language::Turkish,
+            locale_manager: LocaleManager::init(),
             debloat_status_message: None,
             tracker_installer_input: String::new(),
             tracker_custom_name: String::new(),
@@ -182,8 +182,8 @@ impl UninstalrApp {
         });
     }
 
-    fn t(&self) -> &'static Translations {
-        Locales::get(self.current_lang)
+    fn t(&self) -> std::sync::Arc<Translations> {
+        self.locale_manager.t()
     }
 
     fn trigger_scan(&mut self) {
@@ -529,7 +529,7 @@ impl eframe::App for UninstalrApp {
                     ui,
                     &mut self.active_nav,
                     ActiveNavTab::Dashboard,
-                    t.nav_dashboard,
+                    &t.nav_dashboard,
                     self.health_stats.as_ref().map(|h| format!("%{}", h.health_score)),
                     egui::Color32::from_rgb(34, 197, 94),
                 );
@@ -538,7 +538,7 @@ impl eframe::App for UninstalrApp {
                     ui,
                     &mut self.active_nav,
                     ActiveNavTab::Applications,
-                    t.nav_apps,
+                    &t.nav_apps,
                     Some(regular_apps_count.to_string()),
                     egui::Color32::from_rgb(59, 130, 246),
                 );
@@ -548,7 +548,7 @@ impl eframe::App for UninstalrApp {
                     ui,
                     &mut self.active_nav,
                     ActiveNavTab::Tracker,
-                    t.nav_tracker,
+                    &t.nav_tracker,
                     Some(tracked_count.to_string()),
                     egui::Color32::from_rgb(14, 165, 233),
                 );
@@ -557,7 +557,7 @@ impl eframe::App for UninstalrApp {
                     ui,
                     &mut self.active_nav,
                     ActiveNavTab::Debloater,
-                    t.nav_debloater,
+                    &t.nav_debloater,
                     Some(KNOWN_BLOATWARE.len().to_string()),
                     egui::Color32::from_rgb(244, 63, 94),
                 );
@@ -566,7 +566,7 @@ impl eframe::App for UninstalrApp {
                     ui,
                     &mut self.active_nav,
                     ActiveNavTab::BrowserExtensions,
-                    t.nav_extensions,
+                    &t.nav_extensions,
                     Some(ext_count.to_string()),
                     egui::Color32::from_rgb(168, 85, 247),
                 );
@@ -575,7 +575,7 @@ impl eframe::App for UninstalrApp {
                     ui,
                     &mut self.active_nav,
                     ActiveNavTab::Leftovers,
-                    t.nav_leftovers,
+                    &t.nav_leftovers,
                     Some(leftover_count.to_string()),
                     egui::Color32::from_rgb(245, 158, 11),
                 );
@@ -584,7 +584,7 @@ impl eframe::App for UninstalrApp {
                     ui,
                     &mut self.active_nav,
                     ActiveNavTab::ForceShredder,
-                    t.nav_force_clean,
+                    &t.nav_force_clean,
                     None,
                     egui::Color32::from_rgb(239, 68, 68),
                 );
@@ -593,7 +593,7 @@ impl eframe::App for UninstalrApp {
                     ui,
                     &mut self.active_nav,
                     ActiveNavTab::Settings,
-                    t.nav_settings,
+                    &t.nav_settings,
                     None,
                     egui::Color32::from_rgb(161, 161, 170),
                 );
@@ -602,18 +602,24 @@ impl eframe::App for UninstalrApp {
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
                     ui.add_space(6.0);
                     // Language Switcher Pill
-                    let lang_label = match self.current_lang {
-                        Language::Turkish => "🇹🇷 Türkçe",
-                        Language::English => "🇬🇧 English",
-                    };
-                    let lang_btn = egui::Button::new(egui::RichText::new(lang_label).size(12.0).strong())
-                        .fill(egui::Color32::from_rgb(34, 34, 40))
-                        .rounding(egui::Rounding::same(8.0));
-                    if ui.add_sized([ui.available_width(), 28.0], lang_btn).clicked() {
-                        self.current_lang = match self.current_lang {
-                            Language::Turkish => Language::English,
-                            Language::English => Language::Turkish,
-                        };
+                    let current_name = self.locale_manager.current_name().to_string();
+                    let current_code = self.locale_manager.current_code().to_string();
+                    let available = self.locale_manager.get_available_locales();
+
+                    let lang_btn = egui::Button::new(
+                        egui::RichText::new(format!("🌐 {}", current_name))
+                            .size(12.0)
+                            .strong()
+                            .color(egui::Color32::from_rgb(220, 220, 230)),
+                    )
+                    .fill(egui::Color32::from_rgb(34, 34, 42))
+                    .rounding(egui::Rounding::same(8.0));
+
+                    if ui.add_sized([ui.available_width(), 30.0], lang_btn).clicked() {
+                        if let Some(pos) = available.iter().position(|(c, _)| c == &current_code) {
+                            let next_pos = (pos + 1) % available.len();
+                            self.locale_manager.set_language(&available[next_pos].0);
+                        }
                     }
 
                     ui.add_space(6.0);
@@ -647,7 +653,7 @@ impl eframe::App for UninstalrApp {
                 ui.horizontal(|ui| {
                     if self.is_scanning {
                         ui.spinner();
-                        ui.label(egui::RichText::new(t.scanning_status).color(egui::Color32::from_rgb(212, 212, 216)));
+                        ui.label(egui::RichText::new(&t.scanning_status).color(egui::Color32::from_rgb(212, 212, 216)));
                     } else if self.is_uninstalling {
                         ui.spinner();
                         ui.label(
@@ -688,12 +694,12 @@ impl eframe::App for UninstalrApp {
                     .show(ctx, |ui| {
                         ui.horizontal(|ui| {
                             ui.heading(
-                                egui::RichText::new(t.inspect_title)
+                                egui::RichText::new(&t.inspect_title)
                                     .size(16.0)
                                     .color(egui::Color32::from_rgb(56, 189, 248)),
                             );
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                if ui.button(t.btn_close).clicked() {
+                                if ui.button(&t.btn_close).clicked() {
                                     self.active_app_index = None;
                                 }
                             });
@@ -804,7 +810,7 @@ impl eframe::App for UninstalrApp {
                 .filter(|a| self.selected_ids.contains(&a.id))
                 .any(|a| a.is_protected);
 
-            egui::Window::new(t.modal_confirm_title)
+            egui::Window::new(&t.modal_confirm_title)
                 .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
                 .collapsible(false)
                 .resizable(false)
@@ -835,7 +841,7 @@ impl eframe::App for UninstalrApp {
                                         ui.label(egui::RichText::new("•").color(egui::Color32::from_rgb(56, 189, 248)));
                                         ui.label(egui::RichText::new(&app.name).strong());
                                         if app.is_protected {
-                                            render_pill_badge(ui, t.badge_protected, egui::Color32::from_rgb(234, 88, 12));
+                                            render_pill_badge(ui, &t.badge_protected, egui::Color32::from_rgb(234, 88, 12));
                                         }
                                     });
                                 }
@@ -851,7 +857,7 @@ impl eframe::App for UninstalrApp {
                             .inner_margin(egui::Margin::same(8.0))
                             .show(ui, |ui| {
                                 ui.label(
-                                    egui::RichText::new(t.warn_protected_modal)
+                                    egui::RichText::new(&t.warn_protected_modal)
                                         .color(egui::Color32::from_rgb(251, 146, 60))
                                         .size(12.0),
                                 );
@@ -860,14 +866,14 @@ impl eframe::App for UninstalrApp {
 
                     ui.add_space(10.0);
                     ui.label(egui::RichText::new("🛡️ Güvenlik ve Kurtarma Seçenekleri:").strong());
-                    ui.checkbox(&mut self.options.create_restore_point, t.settings_restorepoint);
-                    ui.checkbox(&mut self.options.backup_registry, t.settings_regbackup);
-                    ui.checkbox(&mut self.options.auto_kill, t.settings_autokill);
+                    ui.checkbox(&mut self.options.create_restore_point, &t.settings_restorepoint);
+                    ui.checkbox(&mut self.options.backup_registry, &t.settings_regbackup);
+                    ui.checkbox(&mut self.options.auto_kill, &t.settings_autokill);
 
                     ui.add_space(14.0);
                     ui.horizontal(|ui| {
                         let confirm_btn = egui::Button::new(
-                            egui::RichText::new(t.modal_confirm_btn)
+                            egui::RichText::new(&t.modal_confirm_btn)
                                 .color(egui::Color32::WHITE)
                                 .strong(),
                         )
@@ -878,7 +884,7 @@ impl eframe::App for UninstalrApp {
                             self.trigger_uninstall_confirmed();
                         }
 
-                        if ui.button(t.modal_cancel_btn).clicked() {
+                        if ui.button(&t.modal_cancel_btn).clicked() {
                             self.show_confirm_modal = false;
                         }
                     });
@@ -887,7 +893,7 @@ impl eframe::App for UninstalrApp {
 
         // ================= LIVE UNINSTALL PROGRESS MODAL =================
         if self.is_uninstalling {
-            egui::Window::new(t.modal_uninstalling)
+            egui::Window::new(&t.modal_uninstalling)
                 .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
                 .collapsible(false)
                 .resizable(false)
@@ -897,7 +903,7 @@ impl eframe::App for UninstalrApp {
                     ui.add_space(6.0);
                     ui.add(egui::ProgressBar::new(self.current_progress).show_percentage());
                     ui.separator();
-                    ui.label(t.modal_live_log);
+                    ui.label(&t.modal_live_log);
 
                     egui::ScrollArea::vertical().show(ui, |ui| {
                         for log in self.live_logs.iter().rev().take(30) {
@@ -915,7 +921,7 @@ impl eframe::App for UninstalrApp {
         // ================= COMPLETION REPORT MODAL =================
         let mut close_report = false;
         if let Some(ref report) = self.last_report {
-            egui::Window::new(t.modal_complete)
+            egui::Window::new(&t.modal_complete)
                 .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
                 .collapsible(false)
                 .resizable(false)
@@ -946,14 +952,14 @@ impl eframe::App for UninstalrApp {
                     if report.requires_reboot {
                         ui.add_space(8.0);
                         ui.label(
-                            egui::RichText::new(t.modal_reboot_notice)
+                            egui::RichText::new(&t.modal_reboot_notice)
                                 .color(egui::Color32::from_rgb(251, 191, 36))
                                 .strong(),
                         );
                     }
 
                     ui.add_space(14.0);
-                    if ui.button(t.btn_close).clicked() {
+                    if ui.button(&t.btn_close).clicked() {
                         close_report = true;
                     }
                 });
@@ -972,13 +978,13 @@ impl UninstalrApp {
         let t = self.t();
 
         ui.heading(
-            egui::RichText::new(t.health_title)
+            egui::RichText::new(&t.health_title)
                 .size(22.0)
                 .strong()
                 .color(egui::Color32::WHITE),
         );
         ui.label(
-            egui::RichText::new(t.health_score_desc)
+            egui::RichText::new(&t.health_score_desc)
                 .size(12.5)
                 .color(egui::Color32::from_rgb(161, 161, 170)),
         );
@@ -1031,7 +1037,7 @@ impl UninstalrApp {
                         // 1-Click Quick Optimize Action Button
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             let opt_btn = egui::Button::new(
-                                egui::RichText::new(t.health_opt_btn)
+                                egui::RichText::new(&t.health_opt_btn)
                                     .size(14.0)
                                     .strong()
                                     .color(egui::Color32::WHITE),
@@ -1061,7 +1067,7 @@ impl UninstalrApp {
                 render_kpi_card(
                     ui,
                     "💥",
-                    t.health_crash_dumps,
+                    &t.health_crash_dumps,
                     &format!("{} ({})", health.crash_dump_count, format_bytes(health.crash_dump_bytes)),
                     egui::Color32::from_rgb(239, 68, 68),
                 );
@@ -1069,7 +1075,7 @@ impl UninstalrApp {
                 render_kpi_card(
                     ui,
                     "⚡",
-                    t.stat_leftovers,
+                    &t.stat_leftovers,
                     &format!("{} ({})", health.leftover_count, format_bytes(health.leftover_bytes)),
                     egui::Color32::from_rgb(245, 158, 11),
                 );
@@ -1077,7 +1083,7 @@ impl UninstalrApp {
                 render_kpi_card(
                     ui,
                     "🔗",
-                    t.health_shortcuts,
+                    &t.health_shortcuts,
                     &health.broken_shortcuts_count.to_string(),
                     egui::Color32::from_rgb(56, 189, 248),
                 );
@@ -1085,7 +1091,7 @@ impl UninstalrApp {
                 render_kpi_card(
                     ui,
                     "🛡️",
-                    t.health_protected,
+                    &t.health_protected,
                     &health.protected_count.to_string(),
                     egui::Color32::from_rgb(34, 197, 94),
                 );
@@ -1134,7 +1140,7 @@ impl UninstalrApp {
             ui.add(
                 egui::TextEdit::singleline(&mut self.search_query)
                     .desired_width(260.0)
-                    .hint_text(t.search_hint)
+                    .hint_text(&t.search_hint)
                     .margin(egui::Margin::symmetric(10.0, 7.0)),
             );
 
@@ -1147,11 +1153,11 @@ impl UninstalrApp {
                 .inner_margin(egui::Margin::symmetric(4.0, 4.0))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::All, t.tab_all);
-                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::Win32, t.tab_win32);
-                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::Msi, t.tab_msi);
-                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::Store, t.tab_store);
-                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::Tracked, t.tab_tracked);
+                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::All, &t.tab_all);
+                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::Win32, &t.tab_win32);
+                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::Msi, &t.tab_msi);
+                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::Store, &t.tab_store);
+                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::Tracked, &t.tab_tracked);
                     });
                 });
 
@@ -1224,7 +1230,7 @@ impl UninstalrApp {
                 && filtered_apps.iter().all(|(_, a)| self.selected_ids.contains(&a.id));
 
             let mut check_state = all_checked;
-            if ui.checkbox(&mut check_state, if all_checked { t.btn_deselect_all } else { t.btn_select_all }).changed() {
+            if ui.checkbox(&mut check_state, if all_checked { &t.btn_deselect_all } else { &t.btn_select_all }).changed() {
                 if check_state {
                     for (_, a) in &filtered_apps {
                         self.selected_ids.insert(a.id.clone());
@@ -1297,7 +1303,7 @@ impl UninstalrApp {
 
                             if app.is_protected {
                                 ui.add_space(2.0);
-                                render_pill_badge(ui, t.badge_protected, egui::Color32::from_rgb(234, 88, 12));
+                                render_pill_badge(ui, &t.badge_protected, egui::Color32::from_rgb(234, 88, 12));
                             }
 
                             ui.add_space(4.0);
@@ -1381,13 +1387,13 @@ impl UninstalrApp {
         let t = self.t();
 
         ui.heading(
-            egui::RichText::new(t.ext_title)
+            egui::RichText::new(&t.ext_title)
                 .size(20.0)
                 .strong()
                 .color(egui::Color32::WHITE),
         );
         ui.label(
-            egui::RichText::new(t.ext_desc)
+            egui::RichText::new(&t.ext_desc)
                 .size(12.5)
                 .color(egui::Color32::from_rgb(161, 161, 170)),
         );
@@ -1472,7 +1478,7 @@ impl UninstalrApp {
         let t = self.t();
 
         ui.heading(
-            egui::RichText::new(t.nav_leftovers)
+            egui::RichText::new(&t.nav_leftovers)
                 .size(20.0)
                 .strong()
                 .color(egui::Color32::WHITE),
@@ -1553,13 +1559,13 @@ impl UninstalrApp {
         let t = self.t();
 
         ui.heading(
-            egui::RichText::new(t.force_title)
+            egui::RichText::new(&t.force_title)
                 .size(20.0)
                 .strong()
                 .color(egui::Color32::WHITE),
         );
         ui.label(
-            egui::RichText::new(t.force_desc)
+            egui::RichText::new(&t.force_desc)
                 .size(12.5)
                 .color(egui::Color32::from_rgb(161, 161, 170)),
         );
@@ -1579,11 +1585,11 @@ impl UninstalrApp {
                     ui.add(
                         egui::TextEdit::singleline(&mut self.force_path_input)
                             .desired_width(ui.available_width() - 110.0)
-                            .hint_text(t.force_path_hint)
+                            .hint_text(&t.force_path_hint)
                             .margin(egui::Margin::symmetric(10.0, 8.0)),
                     );
 
-                    let browse_btn = egui::Button::new(t.force_btn_browse)
+                    let browse_btn = egui::Button::new(&t.force_btn_browse)
                         .fill(egui::Color32::from_rgb(48, 48, 58))
                         .rounding(egui::Rounding::same(8.0));
 
@@ -1615,7 +1621,7 @@ impl UninstalrApp {
                 ui.add_space(16.0);
 
                 let shred_btn = egui::Button::new(
-                    egui::RichText::new(t.force_btn_shred)
+                    egui::RichText::new(&t.force_btn_shred)
                         .size(14.0)
                         .strong()
                         .color(egui::Color32::WHITE),
@@ -1642,13 +1648,13 @@ impl UninstalrApp {
         let t = self.t();
 
         ui.heading(
-            egui::RichText::new(t.tracker_title)
+            egui::RichText::new(&t.tracker_title)
                 .size(20.0)
                 .strong()
                 .color(egui::Color32::WHITE),
         );
         ui.label(
-            egui::RichText::new(t.tracker_desc)
+            egui::RichText::new(&t.tracker_desc)
                 .size(12.5)
                 .color(egui::Color32::from_rgb(161, 161, 170)),
         );
@@ -1669,11 +1675,11 @@ impl UninstalrApp {
                     ui.add(
                         egui::TextEdit::singleline(&mut self.tracker_installer_input)
                             .desired_width(ui.available_width() - 165.0)
-                            .hint_text(t.tracker_path_hint)
+                            .hint_text(&t.tracker_path_hint)
                             .margin(egui::Margin::symmetric(10.0, 8.0)),
                     );
 
-                    let browse_btn = egui::Button::new(t.tracker_btn_browse)
+                    let browse_btn = egui::Button::new(&t.tracker_btn_browse)
                         .fill(egui::Color32::from_rgb(48, 52, 64))
                         .rounding(egui::Rounding::same(8.0));
 
@@ -1708,7 +1714,7 @@ impl UninstalrApp {
 
                 ui.horizontal(|ui| {
                     let install_btn = egui::Button::new(
-                        egui::RichText::new(t.tracker_btn_install)
+                        egui::RichText::new(&t.tracker_btn_install)
                             .size(13.5)
                             .strong()
                             .color(egui::Color32::WHITE),
@@ -1828,13 +1834,13 @@ impl UninstalrApp {
         let t = self.t();
 
         ui.heading(
-            egui::RichText::new(t.debloat_title)
+            egui::RichText::new(&t.debloat_title)
                 .size(20.0)
                 .strong()
                 .color(egui::Color32::WHITE),
         );
         ui.label(
-            egui::RichText::new(t.debloat_desc)
+            egui::RichText::new(&t.debloat_desc)
                 .size(12.5)
                 .color(egui::Color32::from_rgb(161, 161, 170)),
         );
@@ -1844,7 +1850,7 @@ impl UninstalrApp {
         // Action Toolbar
         ui.horizontal(|ui| {
             let telem_btn = egui::Button::new(
-                egui::RichText::new(t.debloat_telemetry_btn)
+                egui::RichText::new(&t.debloat_telemetry_btn)
                     .color(egui::Color32::WHITE)
                     .strong()
                     .size(12.5),
@@ -1859,7 +1865,7 @@ impl UninstalrApp {
             ui.add_space(8.0);
 
             let temp_btn = egui::Button::new(
-                egui::RichText::new(t.debloat_temp_btn)
+                egui::RichText::new(&t.debloat_temp_btn)
                     .color(egui::Color32::WHITE)
                     .strong()
                     .size(12.5),
@@ -1959,7 +1965,7 @@ impl UninstalrApp {
         let t = self.t();
 
         ui.heading(
-            egui::RichText::new(t.settings_title)
+            egui::RichText::new(&t.settings_title)
                 .size(20.0)
                 .strong()
                 .color(egui::Color32::WHITE),
@@ -1973,30 +1979,35 @@ impl UninstalrApp {
             .inner_margin(egui::Margin::symmetric(20.0, 18.0))
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new(t.settings_lang).strong());
-                    ui.selectable_value(&mut self.current_lang, Language::Turkish, "🇹🇷 Türkçe");
-                    ui.selectable_value(&mut self.current_lang, Language::English, "🇬🇧 English");
+                    ui.label(egui::RichText::new(&t.settings_lang).strong());
+                    let current_code = self.locale_manager.current_code().to_string();
+                    for (code, name) in self.locale_manager.get_available_locales() {
+                        let is_selected = code == current_code;
+                        if ui.selectable_label(is_selected, &name).clicked() {
+                            self.locale_manager.set_language(&code);
+                        }
+                    }
                 });
 
                 ui.add_space(10.0);
                 ui.separator();
                 ui.add_space(10.0);
 
-                ui.checkbox(&mut self.options.create_restore_point, t.settings_restorepoint);
+                ui.checkbox(&mut self.options.create_restore_point, &t.settings_restorepoint);
                 ui.add_space(4.0);
-                ui.checkbox(&mut self.options.backup_registry, t.settings_regbackup);
+                ui.checkbox(&mut self.options.backup_registry, &t.settings_regbackup);
                 ui.add_space(4.0);
-                ui.checkbox(&mut self.options.auto_kill, t.settings_autokill);
+                ui.checkbox(&mut self.options.auto_kill, &t.settings_autokill);
                 ui.add_space(4.0);
-                ui.checkbox(&mut self.options.clean_empty_dirs, t.settings_emptydirs);
+                ui.checkbox(&mut self.options.clean_empty_dirs, &t.settings_emptydirs);
                 ui.add_space(4.0);
-                ui.checkbox(&mut self.options.clean_broken_shortcuts, t.settings_shortcuts);
+                ui.checkbox(&mut self.options.clean_broken_shortcuts, &t.settings_shortcuts);
                 ui.add_space(4.0);
-                ui.checkbox(&mut self.options.clean_prefetch, t.settings_prefetch);
+                ui.checkbox(&mut self.options.clean_prefetch, &t.settings_prefetch);
                 ui.add_space(4.0);
-                ui.checkbox(&mut self.options.auto_reboot, t.settings_autoreboot);
+                ui.checkbox(&mut self.options.auto_reboot, &t.settings_autoreboot);
                 ui.add_space(4.0);
-                ui.checkbox(&mut self.options.dry_run, t.settings_dryrun);
+                ui.checkbox(&mut self.options.dry_run, &t.settings_dryrun);
             });
     }
 }

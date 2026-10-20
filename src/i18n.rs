@@ -1,337 +1,213 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Arc;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum Language {
-    Turkish,
-    English,
+const BUILTIN_TR: &str = include_str!("../locales/tr.json");
+const BUILTIN_EN: &str = include_str!("../locales/en.json");
+const BUILTIN_DE: &str = include_str!("../locales/de.json");
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LocaleFile {
+    pub locale_name: String,
+    pub locale_code: String,
+    #[serde(flatten)]
+    pub translations: Translations,
 }
 
-impl Default for Language {
-    fn default() -> Self {
-        // Default to Turkish as requested, or detect system
-        Language::Turkish
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Translations {
+    pub app_title: String,
+    pub app_subtitle: String,
+    pub search_hint: String,
+    pub stat_apps: String,
+    pub stat_size: String,
+    pub stat_selected: String,
+    pub stat_leftovers: String,
+    pub tab_all: String,
+    pub tab_win32: String,
+    pub tab_msi: String,
+    pub tab_store: String,
+    pub tab_leftovers: String,
+    pub tab_tracked: String,
+    pub btn_uninstall: String,
+    pub btn_review: String,
+    pub btn_rescan: String,
+    pub btn_settings: String,
+    pub btn_select_all: String,
+    pub btn_deselect_all: String,
+    pub btn_close: String,
+    pub btn_save: String,
+    pub col_name: String,
+    pub col_publisher: String,
+    pub col_version: String,
+    pub col_size: String,
+    pub col_type: String,
+    pub settings_title: String,
+    pub settings_autokill: String,
+    pub settings_restorepoint: String,
+    pub settings_regbackup: String,
+    pub settings_emptydirs: String,
+    pub settings_shortcuts: String,
+    pub settings_prefetch: String,
+    pub settings_autoreboot: String,
+    pub settings_dryrun: String,
+    pub settings_lang: String,
+    pub badge_protected: String,
+    pub warn_protected_modal: String,
+    pub inspect_title: String,
+    pub inspect_publisher: String,
+    pub inspect_version: String,
+    pub inspect_location: String,
+    pub inspect_command: String,
+    pub inspect_size: String,
+    pub inspect_artifacts: String,
+    pub modal_uninstalling: String,
+    pub modal_live_log: String,
+    pub modal_complete: String,
+    pub modal_reboot_notice: String,
+    pub metric_freed: String,
+    pub metric_files: String,
+    pub metric_keys: String,
+    pub metric_procs: String,
+    pub metric_services: String,
+    pub ready_status: String,
+    pub scanning_status: String,
+    pub nav_dashboard: String,
+    pub nav_apps: String,
+    pub nav_tracker: String,
+    pub nav_debloater: String,
+    pub nav_extensions: String,
+    pub nav_leftovers: String,
+    pub nav_force_clean: String,
+    pub nav_settings: String,
+    pub health_title: String,
+    pub health_score_desc: String,
+    pub health_opt_btn: String,
+    pub health_crash_dumps: String,
+    pub health_shortcuts: String,
+    pub health_protected: String,
+    pub tracker_title: String,
+    pub tracker_desc: String,
+    pub tracker_path_hint: String,
+    pub tracker_btn_browse: String,
+    pub tracker_btn_install: String,
+    pub tracker_status_idle: String,
+    pub tracker_status_presnap: String,
+    pub tracker_status_running: String,
+    pub tracker_status_postsnap: String,
+    pub tracker_status_done: String,
+    pub debloat_title: String,
+    pub debloat_desc: String,
+    pub debloat_telemetry_btn: String,
+    pub debloat_temp_btn: String,
+    pub debloat_raze_all_btn: String,
+    pub debloat_success: String,
+    pub ext_title: String,
+    pub ext_desc: String,
+    pub ext_btn_remove: String,
+    pub force_title: String,
+    pub force_desc: String,
+    pub force_path_hint: String,
+    pub force_btn_browse: String,
+    pub force_btn_shred: String,
+    pub force_success: String,
+    pub modal_confirm_title: String,
+    pub modal_confirm_btn: String,
+    pub modal_cancel_btn: String,
 }
 
-pub struct Locales;
+pub struct LocaleManager {
+    locales: HashMap<String, LocaleFile>,
+    current_code: String,
+    active_translations: Arc<Translations>,
+}
 
-impl Locales {
-    pub fn get(lang: Language) -> &'static Translations {
-        match lang {
-            Language::Turkish => &TURKISH_TRANSLATIONS,
-            Language::English => &ENGLISH_TRANSLATIONS,
+impl LocaleManager {
+    pub fn init() -> Self {
+        let mut locales = HashMap::new();
+
+        // 1. Load built-in fallback translations (guarantees standalone single-binary operation)
+        if let Ok(tr) = serde_json::from_str::<LocaleFile>(BUILTIN_TR) {
+            locales.insert(tr.locale_code.clone(), tr);
+        }
+        if let Ok(en) = serde_json::from_str::<LocaleFile>(BUILTIN_EN) {
+            locales.insert(en.locale_code.clone(), en);
+        }
+        if let Ok(de) = serde_json::from_str::<LocaleFile>(BUILTIN_DE) {
+            locales.insert(de.locale_code.clone(), de);
+        }
+
+        // 2. Scan external directory `./locales/`
+        Self::scan_directory(&PathBuf::from("locales"), &mut locales);
+
+        // 3. Scan user roaming directory `%LOCALAPPDATA%\WinRaze\Locales\`
+        if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
+            let user_locales = PathBuf::from(local_appdata).join("WinRaze").join("Locales");
+            let _ = fs::create_dir_all(&user_locales);
+            Self::scan_directory(&user_locales, &mut locales);
+        }
+
+        let default_active = Arc::new(
+            locales
+                .get("tr")
+                .map(|l| l.translations.clone())
+                .unwrap_or_default(),
+        );
+
+        Self {
+            locales,
+            current_code: "tr".to_string(),
+            active_translations: default_active,
         }
     }
+
+    fn scan_directory(dir: &PathBuf, locales: &mut HashMap<String, LocaleFile>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                    if let Ok(content) = fs::read_to_string(&path) {
+                        if let Ok(locale_file) = serde_json::from_str::<LocaleFile>(&content) {
+                            locales.insert(locale_file.locale_code.clone(), locale_file);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn t(&self) -> Arc<Translations> {
+        self.active_translations.clone()
+    }
+
+    pub fn current_code(&self) -> &str {
+        &self.current_code
+    }
+
+    pub fn current_name(&self) -> &str {
+        self.locales
+            .get(&self.current_code)
+            .map(|l| l.locale_name.as_str())
+            .unwrap_or("Türkçe")
+    }
+
+    pub fn set_language(&mut self, code: &str) {
+        if let Some(locale) = self.locales.get(code) {
+            self.current_code = code.to_string();
+            self.active_translations = Arc::new(locale.translations.clone());
+        }
+    }
+
+    /// Returns list of (locale_code, locale_name)
+    pub fn get_available_locales(&self) -> Vec<(String, String)> {
+        let mut list: Vec<(String, String)> = self
+            .locales
+            .values()
+            .map(|l| (l.locale_code.clone(), l.locale_name.clone()))
+            .collect();
+        list.sort_by(|a, b| a.1.cmp(&b.1));
+        list
+    }
 }
-
-#[allow(dead_code)]
-pub struct Translations {
-    pub app_title: &'static str,
-    pub app_subtitle: &'static str,
-    pub search_hint: &'static str,
-    pub stat_apps: &'static str,
-    pub stat_size: &'static str,
-    pub stat_selected: &'static str,
-    pub stat_leftovers: &'static str,
-    pub tab_all: &'static str,
-    pub tab_win32: &'static str,
-    pub tab_msi: &'static str,
-    pub tab_store: &'static str,
-    pub tab_leftovers: &'static str,
-    pub tab_tracked: &'static str,
-    pub btn_uninstall: &'static str,
-    pub btn_review: &'static str,
-    pub btn_rescan: &'static str,
-    pub btn_settings: &'static str,
-    pub btn_select_all: &'static str,
-    pub btn_deselect_all: &'static str,
-    pub btn_close: &'static str,
-    pub btn_save: &'static str,
-    pub col_name: &'static str,
-    pub col_publisher: &'static str,
-    pub col_version: &'static str,
-    pub col_size: &'static str,
-    pub col_type: &'static str,
-    pub settings_title: &'static str,
-    pub settings_autokill: &'static str,
-    pub settings_restorepoint: &'static str,
-    pub settings_regbackup: &'static str,
-    pub settings_emptydirs: &'static str,
-    pub settings_shortcuts: &'static str,
-    pub settings_prefetch: &'static str,
-    pub settings_autoreboot: &'static str,
-    pub settings_dryrun: &'static str,
-    pub settings_lang: &'static str,
-    pub badge_protected: &'static str,
-    pub warn_protected_modal: &'static str,
-    pub inspect_title: &'static str,
-    pub inspect_publisher: &'static str,
-    pub inspect_version: &'static str,
-    pub inspect_location: &'static str,
-    pub inspect_command: &'static str,
-    pub inspect_size: &'static str,
-    pub inspect_artifacts: &'static str,
-    pub modal_uninstalling: &'static str,
-    pub modal_live_log: &'static str,
-    pub modal_complete: &'static str,
-    pub modal_reboot_notice: &'static str,
-    pub metric_freed: &'static str,
-    pub metric_files: &'static str,
-    pub metric_keys: &'static str,
-    pub metric_procs: &'static str,
-    pub metric_services: &'static str,
-    pub ready_status: &'static str,
-    pub scanning_status: &'static str,
-    // Sidebar Navigation Rail
-    pub nav_dashboard: &'static str,
-    pub nav_apps: &'static str,
-    pub nav_tracker: &'static str,
-    pub nav_debloater: &'static str,
-    pub nav_extensions: &'static str,
-    pub nav_leftovers: &'static str,
-    pub nav_force_clean: &'static str,
-    pub nav_settings: &'static str,
-    // Health Dashboard
-    pub health_title: &'static str,
-    pub health_score_desc: &'static str,
-    pub health_opt_btn: &'static str,
-    pub health_crash_dumps: &'static str,
-    pub health_shortcuts: &'static str,
-    pub health_protected: &'static str,
-    // Tracker
-    pub tracker_title: &'static str,
-    pub tracker_desc: &'static str,
-    pub tracker_path_hint: &'static str,
-    pub tracker_btn_browse: &'static str,
-    pub tracker_btn_install: &'static str,
-    pub tracker_status_idle: &'static str,
-    pub tracker_status_presnap: &'static str,
-    pub tracker_status_running: &'static str,
-    pub tracker_status_postsnap: &'static str,
-    pub tracker_status_done: &'static str,
-    // Debloater & Telemetry
-    pub debloat_title: &'static str,
-    pub debloat_desc: &'static str,
-    pub debloat_telemetry_btn: &'static str,
-    pub debloat_temp_btn: &'static str,
-    pub debloat_raze_all_btn: &'static str,
-    pub debloat_success: &'static str,
-    // Browser Extensions
-    pub ext_title: &'static str,
-    pub ext_desc: &'static str,
-    pub ext_btn_remove: &'static str,
-    // Force Shredder
-    pub force_title: &'static str,
-    pub force_desc: &'static str,
-    pub force_path_hint: &'static str,
-    pub force_btn_browse: &'static str,
-    pub force_btn_shred: &'static str,
-    pub force_success: &'static str,
-    // Confirmation Modal
-    pub modal_confirm_title: &'static str,
-    pub modal_confirm_btn: &'static str,
-    pub modal_cancel_btn: &'static str,
-}
-
-pub const TURKISH_TRANSLATIONS: Translations = Translations {
-    app_title: "WinRaze",
-    app_subtitle: "Raze the bloat. Reclaim your Windows. Powered by Rust. 🦀",
-    search_hint: "Uygulama veya yayımcı ara...",
-    stat_apps: "Kurulu Yazılımlar",
-    stat_size: "Toplam Boyut",
-    stat_selected: "Kaldırılacak Seçilen",
-    stat_leftovers: "Sahipsiz Kalıntılar",
-    tab_all: "Tümü",
-    tab_win32: "Win32",
-    tab_msi: "MSI Paketi",
-    tab_store: "Store / UWP",
-    tab_leftovers: "Kalıntılar",
-    tab_tracked: "İzlenenler",
-    btn_uninstall: "Seçilenleri Kaldır",
-    btn_review: "Artıkları İncele",
-    btn_rescan: "Yeniden Tara",
-    btn_settings: "Ayarlar",
-    btn_select_all: "Tümünü Seç",
-    btn_deselect_all: "Seçimi Kaldır",
-    btn_close: "Kapat",
-    btn_save: "Kaydet & Kapat",
-    col_name: "Yazılım Adı",
-    col_publisher: "Yayımcı",
-    col_version: "Sürüm",
-    col_size: "Disk Alanı",
-    col_type: "Tür",
-    settings_title: "⚙️ Tercihler & Motor Ayarları",
-    settings_autokill: "AutoKill: Dosyaları kilitleyen süreç ve servisleri otomatik sonlandır",
-    settings_restorepoint: "Geri Yükleme Noktası: İşlem öncesi otomatik Sistem Geri Yükleme Noktası oluştur",
-    settings_regbackup: "Kayıt Defteri Yedeği: Silinen anahtarları .reg dosyası olarak yedekle (Geri Alabilme)",
-    settings_emptydirs: "AutoDelEmptyDirs: Kaldırma sonrası boş kalan dizinleri temizle",
-    settings_shortcuts: "AutoDelShortcuts: Kırık Başlat Menüsü ve Masaüstü kısayollarını sil",
-    settings_prefetch: "Prefetch: Windows Prefetch (*.pf) önbellek kayıtlarını temizle",
-    settings_autoreboot: "AutoReboot: Kilitli dosyalar varsa yeniden başlatmada temizle",
-    settings_dryrun: "Simülasyon Modu: Sisteme dokunmadan önizleme yap",
-    settings_lang: "Arayüz Dili (Language):",
-    badge_protected: "🛡️ Sistem Koruması",
-    warn_protected_modal: "Seçilenler arasında kritik sistem bileşenleri / sürücüler bulunuyor. Devam etmek istediğinizden emin misiniz?",
-    inspect_title: "🔍 Derin İnceleme & Artık Önizleme",
-    inspect_publisher: "Yayımcı:",
-    inspect_version: "Sürüm:",
-    inspect_location: "Kurulum Dizini:",
-    inspect_command: "Kaldırıcı Komutu:",
-    inspect_size: "Hesaplanan Boyut:",
-    inspect_artifacts: "Takip Edilen Bağlantılı Öğeler",
-    modal_uninstalling: "🚀 WinRaze Kaldırma & Debloat Boru Hattı",
-    modal_live_log: "Canlı Eylem Akışı:",
-    modal_complete: "✔ İşlem Başarıyla Tamamlandı",
-    modal_reboot_notice: "⚠ Dikkat: Bazı kilitli dosyalar bir sonraki sistem yeniden başlatmasında silinecektir.",
-    metric_freed: "Kazanılan Disk Alanı:",
-    metric_files: "Temizlenen Dosya/Klasör:",
-    metric_keys: "Silinen Kayıt Defteri Anahtarı:",
-    metric_procs: "Sonlandırılan İşlem:",
-    metric_services: "Durdurulan Windows Servisi:",
-    ready_status: "Hazır. Kaldırmak istediğiniz yazılımları işaretleyin veya debloat sekmesine geçin.",
-    scanning_status: "Sistem taranıyor: Kayıt defteri, bloatware paketleri ve veri dizinleri inceleniyor...",
-    nav_dashboard: "📊 Sistem Sağlığı",
-    nav_apps: "📦 Kurulu Yazılımlar",
-    nav_tracker: "🔍 Kurulum İzleyici",
-    nav_debloater: "🚀 Debloater & Telemetri",
-    nav_extensions: "🧩 Tarayıcı Eklentileri",
-    nav_leftovers: "⚡ Kalıntılar & Artıklar",
-    nav_force_clean: "🔥 Zorla Kaldırıcı",
-    nav_settings: "⚙️ Güvenlik & Ayarlar",
-    health_title: "Windows Sistem Sağlık Endeksi",
-    health_score_desc: "Kayıt defteri artıkları, çökme dökümleri ve kırık kısayolların genel sistem stabilitesine etkisi hesaplandı.",
-    health_opt_btn: "⚡ 1-Tık Hızlı Sağlık Temizliği Yap",
-    health_crash_dumps: "Çökme Raporları (Crash Dumps)",
-    health_shortcuts: "Kırık Başlat/Masaüstü Kısayolları",
-    health_protected: "Korumalı Kritik Sistem Bileşenleri",
-    tracker_title: "Kurulum İzleyici & Sistem Anlık Görüntüsü (Snapshot)",
-    tracker_desc: "Bir kurulum dosyası (.exe/.msi) çalıştırmadan önce sistem fotoğrafı çekilir, kurulum sonrası fark tespit edilerek sıfır artık profili oluşturulur.",
-    tracker_path_hint: "Kurulum dosyasını seçin (.exe, .msi)...",
-    tracker_btn_browse: "📂 Kurulum Dosyası Seç...",
-    tracker_btn_install: "🚀 Kurulumu Başlat & Canlı İzle",
-    tracker_status_idle: "Beklemede. Kurmak istediğiniz setup dosyasını seçin.",
-    tracker_status_presnap: "Kurulum öncesi sistem fotoğrafı (Registry & Dosyalar) alınıyor...",
-    tracker_status_running: "Kurulum çalışıyor. Kurulumu tamamlayın ve pencereyi kapatın...",
-    tracker_status_postsnap: "Kurulum sonrası fark (Diff) taranıyor ve gürültü filtreleniyor...",
-    tracker_status_done: "✔ Kurulum başarıyla izlendi ve sıfır artık profili kaydedildi!",
-    debloat_title: "Windows Bloatware & Telemetri Temizleyici",
-    debloat_desc: "Arka planda çalışan telemetri servislerini, veri takibini ve gereksiz Windows bloatware paketlerini yerle bir edin.",
-    debloat_telemetry_btn: "🛡️ Telemetri ve Tanılamayı Engelle (DiagTrack & Policies)",
-    debloat_temp_btn: "🧹 Temp Dosyaları ve Önbellekleri Temizle",
-    debloat_raze_all_btn: "🔥 Seçilen Bloatware Paketlerini Yerle Bir Et",
-    debloat_success: "Telemetri servisleri kapatıldı ve bloatware paketleri temizlendi.",
-    ext_title: "Web Tarayıcı Eklenti Yöneticisi",
-    ext_desc: "Chrome, Edge ve Brave tarayıcılarına kurulu uzantıları doğrudan diskten tespit eder ve temizler.",
-    ext_btn_remove: "Eklentiyi Kaldır",
-    force_title: "Zorla Kaldırıcı & Kalıntı Öğütücü",
-    force_desc: "Kaldırıcısı bozuk veya Denetim Masasında görünmeyen program klasörlerini, kilitli dosyalarını ve kayıt defteri bağlantılarını kökten yok edin.",
-    force_path_hint: "Hedef klasör veya dosya yolunu girin (örn: C:\\Program Files\\OrnekApp)...",
-    force_btn_browse: "📂 Gözat...",
-    force_btn_shred: "🔥 Derinlemesine Yok Et",
-    force_success: "Hedef klasör ve ilişkili tüm kayıtlar başarıyla imha edildi.",
-    modal_confirm_title: "🛡️ Kaldırma Öncesi Güvenlik Doğrulaması",
-    modal_confirm_btn: "Onayla & Başlat",
-    modal_cancel_btn: "İptal Et",
-};
-
-pub const ENGLISH_TRANSLATIONS: Translations = Translations {
-    app_title: "WinRaze",
-    app_subtitle: "Raze the bloat. Reclaim your Windows. Powered by Rust. 🦀",
-    search_hint: "Search apps or publishers...",
-    stat_apps: "Installed Software",
-    stat_size: "Total Size",
-    stat_selected: "Selected for Removal",
-    stat_leftovers: "Orphaned Leftovers",
-    tab_all: "All Apps",
-    tab_win32: "Win32",
-    tab_msi: "MSI Package",
-    tab_store: "Store / UWP",
-    tab_leftovers: "Leftovers",
-    tab_tracked: "Tracked Apps",
-    btn_uninstall: "Uninstall Selected",
-    btn_review: "Review Artifacts",
-    btn_rescan: "Rescan",
-    btn_settings: "Settings",
-    btn_select_all: "Select All",
-    btn_deselect_all: "Deselect All",
-    btn_close: "Close",
-    btn_save: "Save & Close",
-    col_name: "Application Name",
-    col_publisher: "Publisher",
-    col_version: "Version",
-    col_size: "Disk Space",
-    col_type: "Type",
-    settings_title: "⚙️ Preferences & Engine Settings",
-    settings_autokill: "AutoKill: Automatically terminate locking processes & services",
-    settings_restorepoint: "System Restore Point: Create an automatic restore point before uninstalling",
-    settings_regbackup: "Registry Backup: Export deleted keys as .reg rollback files before removal",
-    settings_emptydirs: "AutoDelEmptyDirs: Clean empty parent directories after uninstall",
-    settings_shortcuts: "AutoDelShortcuts: Remove orphaned Start Menu & Desktop shortcuts",
-    settings_prefetch: "Prefetch: Clean Windows Prefetch (*.pf) cache entries",
-    settings_autoreboot: "AutoReboot: Clean locked files on next system reboot",
-    settings_dryrun: "Simulation Mode: Preview actions without touching the system",
-    settings_lang: "Interface Language:",
-    badge_protected: "🛡️ System Protected",
-    warn_protected_modal: "Critical system components or hardware drivers are selected. Are you sure you want to proceed?",
-    inspect_title: "🔍 Deep Inspection & Residual Preview",
-    inspect_publisher: "Publisher:",
-    inspect_version: "Version:",
-    inspect_location: "Install Location:",
-    inspect_command: "Uninstall String:",
-    inspect_size: "Calculated Size:",
-    inspect_artifacts: "Tracked Linked Artifacts",
-    modal_uninstalling: "🚀 WinRaze Uninstallation & Debloat Pipeline",
-    modal_live_log: "Live Action Log:",
-    modal_complete: "✔ Operation Completed Successfully",
-    modal_reboot_notice: "⚠ Attention: Some locked files will be scheduled for removal upon next reboot.",
-    metric_freed: "Disk Space Reclaimed:",
-    metric_files: "Files/Folders Cleaned:",
-    metric_keys: "Registry Keys Removed:",
-    metric_procs: "Processes Terminated:",
-    metric_services: "Windows Services Stopped:",
-    ready_status: "Ready. Select applications to uninstall or switch to the Debloater tab.",
-    scanning_status: "Scanning system: Analyzing registry, AppX packages, and leftover directories...",
-    nav_dashboard: "📊 System Health",
-    nav_apps: "📦 Installed Apps",
-    nav_tracker: "🔍 Install Tracker",
-    nav_debloater: "🚀 Debloater & Privacy",
-    nav_extensions: "🧩 Browser Extensions",
-    nav_leftovers: "⚡ Residual Leftovers",
-    nav_force_clean: "🔥 Force Shredder",
-    nav_settings: "⚙️ Safety & Config",
-    health_title: "Windows System Health Index",
-    health_score_desc: "Calculated impact of residual registry keys, crash reports, and broken shortcuts on stability.",
-    health_opt_btn: "⚡ 1-Click Health Optimization",
-    health_crash_dumps: "Crash Reports (Crash Dumps)",
-    health_shortcuts: "Broken Desktop/Start Shortcuts",
-    health_protected: "Protected Mission-Critical Apps",
-    tracker_title: "Installation Monitor & System Snapshot",
-    tracker_desc: "Takes pre-install snapshots, launches setup, and records all new files and registry keys for zero-leftover uninstallation.",
-    tracker_path_hint: "Select installer executable (.exe, .msi)...",
-    tracker_btn_browse: "📂 Browse Installer...",
-    tracker_btn_install: "🚀 Install & Track Changes",
-    tracker_status_idle: "Idle. Select an installer executable to begin.",
-    tracker_status_presnap: "Capturing pre-install system snapshot (Registry & Files)...",
-    tracker_status_running: "Installer is running. Complete the setup and finish it...",
-    tracker_status_postsnap: "Calculating diff and filtering background noise...",
-    tracker_status_done: "✔ Installation successfully tracked and profile saved!",
-    debloat_title: "Windows Bloatware & Telemetry Purger",
-    debloat_desc: "Disable background telemetry tracking services and rase preinstalled Windows bloatware packages.",
-    debloat_telemetry_btn: "🛡️ Disable Telemetry & Diagnostics (DiagTrack & Policies)",
-    debloat_temp_btn: "🧹 Clean Temp Files & Caches",
-    debloat_raze_all_btn: "🔥 Raze Selected Bloatware Packages",
-    debloat_success: "Telemetry services stopped and bloatware packages purged successfully.",
-    ext_title: "Web Browser Extensions Manager",
-    ext_desc: "Detect and remove extensions directly from disk for Chrome, Edge, and Brave browsers.",
-    ext_btn_remove: "Remove Extension",
-    force_title: "Forceful Software Shredder",
-    force_desc: "Completely eradicate stubborn software folders, locked files, and registry traces without native uninstaller.",
-    force_path_hint: "Enter target folder or file path (e.g., C:\\Program Files\\ExampleApp)...",
-    force_btn_browse: "📂 Browse...",
-    force_btn_shred: "🔥 Forcefully Shred",
-    force_success: "Target directory and all associated registry traces destroyed.",
-    modal_confirm_title: "🛡️ Pre-Uninstall Safety Confirmation",
-    modal_confirm_btn: "Confirm & Proceed",
-    modal_cancel_btn: "Cancel",
-};
-
