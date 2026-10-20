@@ -491,11 +491,11 @@ impl eframe::App for UninstalrApp {
 
         // ================= LEFT NAVIGATION RAIL (ORIGINAL WINUI 3 SIDEBAR) =================
         egui::SidePanel::left("left_nav_rail")
-            .exact_width(225.0)
+            .exact_width(235.0)
             .resizable(false)
             .frame(
                 egui::Frame::none()
-                    .fill(egui::Color32::from_rgb(20, 20, 24))
+                    .fill(egui::Color32::from_rgb(20, 20, 25))
                     .inner_margin(egui::Margin::symmetric(14.0, 18.0)),
             )
             .show(ctx, |ui| {
@@ -510,11 +510,11 @@ impl eframe::App for UninstalrApp {
                                     .strong()
                                     .size(19.0),
                             );
-                            render_pill_badge(ui, "v0.1.0", egui::Color32::from_rgb(234, 179, 8));
+                            render_pill_badge(ui, "v0.3.0", egui::Color32::from_rgb(14, 165, 233));
                         });
                         ui.label(
                             egui::RichText::new("Raze the bloat · Powered by Rust 🦀")
-                                .color(egui::Color32::from_rgb(113, 113, 122))
+                                .color(egui::Color32::from_rgb(140, 140, 150))
                                 .size(11.0),
                         );
                     });
@@ -1302,33 +1302,9 @@ impl UninstalrApp {
 
                             ui.add_space(4.0);
 
-                            ui.vertical(|ui| {
-                                let name_btn = ui.add(
-                                    egui::Button::new(
-                                        egui::RichText::new(&app.name)
-                                            .strong()
-                                            .size(14.0)
-                                            .color(egui::Color32::from_rgb(244, 244, 245)),
-                                    )
-                                    .frame(false),
-                                );
-
-                                if name_btn.clicked() {
-                                    self.active_app_index = Some(real_idx);
-                                }
-
-                                let pub_str = app.publisher.as_deref().unwrap_or("Bilinmeyen Yayımcı");
-                                let ver_str = app.version.as_deref().unwrap_or("-");
-                                ui.label(
-                                    egui::RichText::new(format!("{} · v{}", pub_str, ver_str))
-                                        .size(11.5)
-                                        .color(egui::Color32::from_rgb(161, 161, 170)),
-                                );
-                            });
-
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                 let inspect_btn = ui.add(
-                                    egui::Button::new(egui::RichText::new("🔍").size(14.0))
+                                    egui::Button::new(egui::RichText::new("🔍").size(13.5))
                                         .fill(egui::Color32::from_rgb(46, 46, 56))
                                         .rounding(egui::Rounding::same(6.0)),
                                 );
@@ -1340,7 +1316,7 @@ impl UninstalrApp {
 
                                 let size_str = format_bytes(app.estimated_size_bytes);
                                 egui::Frame::none()
-                                    .fill(egui::Color32::from_rgb(40, 40, 48))
+                                    .fill(egui::Color32::from_rgb(40, 40, 50))
                                     .rounding(egui::Rounding::same(6.0))
                                     .inner_margin(egui::Margin::symmetric(8.0, 4.0))
                                     .show(ui, |ui| {
@@ -1351,6 +1327,48 @@ impl UninstalrApp {
                                                 .size(12.0),
                                         );
                                     });
+
+                                ui.add_space(10.0);
+
+                                // Middle Title & Publisher info with safe truncation
+                                ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                                    ui.vertical(|ui| {
+                                        let display_name = if app.name.chars().count() > 42 {
+                                            format!("{}...", app.name.chars().take(39).collect::<String>())
+                                        } else {
+                                            app.name.clone()
+                                        };
+
+                                        let name_btn = ui.add(
+                                            egui::Button::new(
+                                                egui::RichText::new(display_name)
+                                                    .strong()
+                                                    .size(13.5)
+                                                    .color(egui::Color32::from_rgb(244, 244, 245)),
+                                            )
+                                            .frame(false),
+                                        );
+
+                                        if name_btn.clicked() {
+                                            self.active_app_index = Some(real_idx);
+                                        }
+
+                                        let pub_str = app.publisher.as_deref().unwrap_or("Bilinmeyen Yayımcı");
+                                        let ver_str = app.version.as_deref().unwrap_or("-");
+                                        let info_str = format!("{} · v{}", pub_str, ver_str);
+                                        let display_info = if info_str.chars().count() > 50 {
+                                            format!("{}...", info_str.chars().take(47).collect::<String>())
+                                        } else {
+                                            info_str
+                                        };
+
+                                        ui.label(
+                                            egui::RichText::new(display_info)
+                                                .size(11.0)
+                                                .color(egui::Color32::from_rgb(155, 155, 165)),
+                                        );
+                                    });
+                                });
                             });
                         });
                     });
@@ -1650,16 +1668,16 @@ impl UninstalrApp {
                 ui.horizontal(|ui| {
                     ui.add(
                         egui::TextEdit::singleline(&mut self.tracker_installer_input)
-                            .desired_width(ui.available_width() - 150.0)
+                            .desired_width(ui.available_width() - 165.0)
                             .hint_text(t.tracker_path_hint)
                             .margin(egui::Margin::symmetric(10.0, 8.0)),
                     );
 
                     let browse_btn = egui::Button::new(t.tracker_btn_browse)
-                        .fill(egui::Color32::from_rgb(48, 48, 58))
+                        .fill(egui::Color32::from_rgb(48, 52, 64))
                         .rounding(egui::Rounding::same(8.0));
 
-                    if ui.add_sized([135.0, 32.0], browse_btn).clicked() {
+                    if ui.add_sized([150.0, 34.0], browse_btn).clicked() {
                         if let Some(file) = rfd::FileDialog::new()
                             .add_filter("Kurulum Dosyası (Installer)", &["exe", "msi"])
                             .pick_file()
@@ -1679,44 +1697,44 @@ impl UninstalrApp {
                 ui.add_space(4.0);
                 ui.add(
                     egui::TextEdit::singleline(&mut self.tracker_custom_name)
-                        .desired_width(320.0)
+                        .desired_width(ui.available_width() - 165.0)
                         .hint_text("Örn: Google Chrome, Notepad++...")
-                        .margin(egui::Margin::symmetric(10.0, 6.0)),
+                        .margin(egui::Margin::symmetric(10.0, 7.0)),
                 );
 
-                ui.add_space(14.0);
+                ui.add_space(16.0);
 
                 let file_exists = Path::new(&self.tracker_installer_input).exists() && !self.tracker_installer_input.trim().is_empty();
 
-                let install_btn = egui::Button::new(
-                    egui::RichText::new(t.tracker_btn_install)
-                        .size(14.0)
-                        .strong()
-                        .color(egui::Color32::WHITE),
-                )
-                .fill(if file_exists && !self.tracker_is_busy {
-                    egui::Color32::from_rgb(14, 165, 233)
-                } else {
-                    egui::Color32::from_rgb(60, 60, 68)
-                })
-                .rounding(egui::Rounding::same(8.0));
+                ui.horizontal(|ui| {
+                    let install_btn = egui::Button::new(
+                        egui::RichText::new(t.tracker_btn_install)
+                            .size(13.5)
+                            .strong()
+                            .color(egui::Color32::WHITE),
+                    )
+                    .fill(if file_exists && !self.tracker_is_busy {
+                        egui::Color32::from_rgb(14, 165, 233)
+                    } else {
+                        egui::Color32::from_rgb(46, 48, 58)
+                    })
+                    .rounding(egui::Rounding::same(8.0));
 
-                if ui.add_sized([240.0, 38.0], install_btn).clicked() && file_exists && !self.tracker_is_busy {
-                    self.trigger_track_installation();
-                }
+                    if ui.add_sized([250.0, 38.0], install_btn).clicked() && file_exists && !self.tracker_is_busy {
+                        self.trigger_track_installation();
+                    }
 
-                if self.tracker_is_busy {
-                    ui.add_space(10.0);
-                    ui.horizontal(|ui| {
+                    if self.tracker_is_busy {
+                        ui.add_space(12.0);
                         ui.spinner();
                         if let Some(ref msg) = self.tracker_status_message {
-                            ui.label(egui::RichText::new(msg).color(egui::Color32::from_rgb(56, 189, 248)).strong());
+                            ui.label(egui::RichText::new(msg).color(egui::Color32::from_rgb(56, 189, 248)).strong().size(12.5));
                         }
-                    });
-                } else if let Some(ref status) = self.tracker_status_message {
-                    ui.add_space(10.0);
-                    ui.label(egui::RichText::new(status).color(egui::Color32::from_rgb(34, 197, 94)).strong());
-                }
+                    } else if let Some(ref status) = self.tracker_status_message {
+                        ui.add_space(12.0);
+                        ui.label(egui::RichText::new(status).color(egui::Color32::from_rgb(34, 197, 94)).strong().size(12.5));
+                    }
+                });
             });
 
         ui.add_space(18.0);
@@ -1994,73 +2012,96 @@ fn render_nav_item(
     accent_color: egui::Color32,
 ) {
     let is_active = *current_tab == target;
+    let width = ui.available_width();
+    let desired_size = egui::vec2(width, 36.0);
+    let (rect, response) = ui.allocate_exact_size(desired_size, egui::Sense::click());
+
+    let is_hovered = response.hovered();
 
     let bg_color = if is_active {
-        egui::Color32::from_rgb(36, 40, 52)
+        egui::Color32::from_rgb(34, 40, 56)
+    } else if is_hovered {
+        egui::Color32::from_rgb(28, 30, 40)
     } else {
         egui::Color32::TRANSPARENT
     };
 
     let border_stroke = if is_active {
-        egui::Stroke::new(1.0_f32, accent_color)
+        egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(50, 60, 85))
     } else {
         egui::Stroke::NONE
     };
 
     let text_color = if is_active {
         egui::Color32::WHITE
+    } else if is_hovered {
+        egui::Color32::from_rgb(240, 240, 245)
     } else {
-        egui::Color32::from_rgb(180, 180, 190)
+        egui::Color32::from_rgb(161, 161, 170)
     };
 
-    let frame = egui::Frame::none()
-        .fill(bg_color)
-        .stroke(border_stroke)
-        .rounding(egui::Rounding::same(8.0))
-        .inner_margin(egui::Margin::symmetric(10.0, 9.0));
+    // Draw background
+    ui.painter().rect(rect, egui::Rounding::same(8.0), bg_color, border_stroke);
 
-    let response = frame.show(ui, |ui| {
-        ui.horizontal(|ui| {
-            ui.label(
-                egui::RichText::new(label)
-                    .color(text_color)
-                    .strong()
-                    .size(13.0),
-            );
+    // Left indicator bar for active item
+    if is_active {
+        let indicator_rect = egui::Rect::from_min_size(
+            egui::pos2(rect.min.x + 3.0, rect.min.y + 8.0),
+            egui::vec2(3.5, 20.0),
+        );
+        ui.painter().rect_filled(indicator_rect, egui::Rounding::same(2.0), accent_color);
+    }
 
-            if let Some(b) = badge {
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    render_pill_badge(ui, &b, accent_color);
-                });
-            }
-        });
-    });
+    // Inner content layout
+    let content_rect = rect.shrink2(egui::vec2(12.0, 0.0));
+    ui.allocate_new_ui(
+        egui::UiBuilder::new()
+            .max_rect(content_rect)
+            .layout(egui::Layout::left_to_right(egui::Align::Center)),
+        |child_ui| {
+            child_ui.horizontal(|ui| {
+                ui.label(
+                    egui::RichText::new(label)
+                        .color(text_color)
+                        .strong()
+                        .size(13.0),
+                );
 
-    if response.response.interact(egui::Sense::click()).clicked() {
+                if let Some(b) = badge {
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        render_pill_badge(ui, &b, accent_color);
+                    });
+                }
+            });
+        },
+    );
+
+    if response.clicked() {
         *current_tab = target;
     }
 
-    ui.add_space(3.0);
+    ui.add_space(2.0);
 }
 
 fn render_kpi_card(ui: &mut egui::Ui, icon: &str, title: &str, value: &str, accent_color: egui::Color32) {
     egui::Frame::none()
-        .fill(egui::Color32::from_rgb(32, 32, 38))
-        .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(46, 46, 54)))
+        .fill(egui::Color32::from_rgb(32, 32, 40))
+        .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(46, 48, 60)))
         .rounding(egui::Rounding::same(10.0))
-        .inner_margin(egui::Margin::symmetric(14.0, 10.0))
+        .inner_margin(egui::Margin::symmetric(14.0, 12.0))
         .show(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(icon).size(18.0));
+                ui.label(egui::RichText::new(icon).size(20.0));
+                ui.add_space(4.0);
                 ui.vertical(|ui| {
                     ui.label(
                         egui::RichText::new(title)
-                            .size(11.0)
+                            .size(11.5)
                             .color(egui::Color32::from_rgb(161, 161, 170)),
                     );
                     ui.label(
                         egui::RichText::new(value)
-                            .size(15.0)
+                            .size(15.5)
                             .strong()
                             .color(accent_color),
                     );
@@ -2079,10 +2120,10 @@ fn render_filter_tab(ui: &mut egui::Ui, current: &mut FilterTab, target: FilterT
     let text_color = if is_selected {
         egui::Color32::WHITE
     } else {
-        egui::Color32::from_rgb(161, 161, 170)
+        egui::Color32::from_rgb(175, 175, 185)
     };
 
-    let btn = egui::Button::new(egui::RichText::new(label).color(text_color).strong().size(12.0))
+    let btn = egui::Button::new(egui::RichText::new(label).color(text_color).strong().size(12.5))
         .fill(bg_color)
         .rounding(egui::Rounding::same(6.0));
 
@@ -2093,21 +2134,21 @@ fn render_filter_tab(ui: &mut egui::Ui, current: &mut FilterTab, target: FilterT
 
 fn render_pill_badge(ui: &mut egui::Ui, text: &str, color: egui::Color32) {
     egui::Frame::none()
-        .fill(color.linear_multiply(0.2))
+        .fill(color.linear_multiply(0.18))
         .stroke(egui::Stroke::new(1.0_f32, color))
         .rounding(egui::Rounding::same(6.0))
-        .inner_margin(egui::Margin::symmetric(6.0, 2.0))
+        .inner_margin(egui::Margin::symmetric(7.0, 2.5))
         .show(ui, |ui| {
-            ui.label(egui::RichText::new(text).color(color).strong().size(10.5));
+            ui.label(egui::RichText::new(text).color(color).strong().size(11.0));
         });
 }
 
 pub fn run_gui() -> eframe::Result<()> {
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([1200.0, 780.0])
-            .with_min_inner_size([920.0, 580.0])
-            .with_title("WinRaze (v0.1.0) - Raze the bloat. Reclaim your Windows. Powered by Rust. 🦀"),
+            .with_inner_size([1240.0, 800.0])
+            .with_min_inner_size([960.0, 600.0])
+            .with_title("WinRaze v0.3.0 · Windows Deep Uninstaller & System Debloater"),
         ..Default::default()
     };
 
@@ -2117,3 +2158,4 @@ pub fn run_gui() -> eframe::Result<()> {
         Box::new(|cc| Ok(Box::new(UninstalrApp::new(cc)))),
     )
 }
+
