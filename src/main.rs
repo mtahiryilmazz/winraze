@@ -1,3 +1,4 @@
+mod debloater;
 mod gui;
 mod i18n;
 mod model;
@@ -9,16 +10,16 @@ mod uninstaller;
 use clap::{Parser, Subcommand};
 use colored::*;
 
+use debloater::{DebloaterEngine, KNOWN_BLOATWARE};
 use model::{ScanConfig, UninstallOptions};
 use scanner::SystemScanner;
 use ui::TerminalUI;
 use uninstaller::UninstallationEngine;
 
 #[derive(Parser)]
-#[command(name = "derust")]
-#[command(author = "M. Tahir Yılmaz <YILLABS>")]
-#[command(version = "0.1.0-beta")]
-#[command(about = "YILLABS DeRust: Modern, high-performance batch uninstaller & deep residual cleaner for Windows")]
+#[command(name = "winraze")]
+#[command(version = "0.1.0")]
+#[command(about = "WinRaze: Raze the bloat. Reclaim your Windows. Powered by Rust. 🦀")]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -26,6 +27,38 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Scan system and report bloatware, leftovers, and reclaimable space (Read-Only safe mode)
+    Scan {
+        /// Filter apps by name substring
+        #[arg(short, long)]
+        filter: Option<String>,
+
+        /// Exclude Microsoft Store / AppX packages
+        #[arg(long)]
+        no_store: bool,
+
+        /// Output as raw JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Launch the interactive GUI Desktop Application
+    Gui,
+
+    /// Unattended purge: raze preinstalled bloatware packages and disable telemetry
+    Purge {
+        /// Automatic yes to prompts; run unassisted
+        #[arg(short, long)]
+        yes: bool,
+    },
+
+    /// Clean temporary files, Windows temp, and browser caches
+    Clean {
+        /// Clean temporary files and caches
+        #[arg(long)]
+        temp: bool,
+    },
+
     /// List all installed applications, Store apps and leftovers
     List {
         /// Filter apps by name substring
@@ -106,9 +139,6 @@ enum Commands {
 
     /// List all discovered browser extensions (Chrome, Edge, Brave)
     Extensions,
-
-    /// Launch the interactive GUI Desktop Application
-    Gui,
 }
 
 fn main() {
@@ -128,7 +158,8 @@ fn main() {
                 TerminalUI::print_app_list(&apps);
             }
         }
-        Some(Commands::List { filter, no_store, json }) => {
+
+        Some(Commands::Scan { filter, no_store, json }) | Some(Commands::List { filter, no_store, json }) => {
             let config = ScanConfig {
                 include_store_apps: !no_store,
                 include_portable_apps: true,
@@ -284,6 +315,48 @@ fn main() {
             let extensions: Vec<_> = apps.into_iter().filter(|a| a.app_type == model::AppType::BrowserExtension).collect();
             println!("{}", format!("=== Discovered Browser Extensions ({}) ===", extensions.len()).magenta().bold());
             TerminalUI::print_app_list(&extensions);
+        }
+
+        Some(Commands::Purge { yes }) => {
+            TerminalUI::print_banner();
+            println!("{}", "🔥 WinRaze: Unattended Bloatware & Telemetry Purge Protocol Initiated".red().bold());
+            if !yes {
+                println!("{}", "[-] Use --yes flag to confirm unattended eradication: winraze purge --yes".yellow());
+                return;
+            }
+
+            println!("{}", "[*] Disabling Windows Telemetry & Diagnostic Data Tracking...".cyan());
+            let telem_logs = DebloaterEngine::disable_telemetry();
+            for l in telem_logs {
+                println!("  • {}", l.green());
+            }
+
+            println!("\n{}", "[*] Razing Preinstalled Windows Bloatware Packages...".magenta());
+            for target in KNOWN_BLOATWARE {
+                let success = DebloaterEngine::remove_bloatware(target);
+                let mark = if success { "✔".green() } else { "•".dimmed() };
+                println!("  {} {} ({})", mark, target.name.bold(), target.category.dimmed());
+            }
+
+            println!("\n{}", "[*] Purging System Temp & Browser Caches...".yellow());
+            let (count, bytes, _) = DebloaterEngine::clean_temporary_files();
+            println!("  ✔ Cleaned {} temporary cache files ({})", count, ui::format_bytes(bytes).green().bold());
+
+            println!("\n{}", "✔ WinRaze Purge Completed. System debloated and privacy secured.".green().bold());
+        }
+
+        Some(Commands::Clean { temp }) => {
+            TerminalUI::print_banner();
+            if temp {
+                println!("{}", "[*] Cleaning Temporary Files, Windows Temp, and Browser Caches...".cyan().bold());
+                let (count, bytes, logs) = DebloaterEngine::clean_temporary_files();
+                for l in logs {
+                    println!("  • {}", l);
+                }
+                println!("\n{}", format!("✔ Successfully freed {} across {} files.", ui::format_bytes(bytes), count).green().bold());
+            } else {
+                println!("{}", "[-] Specify what to clean, for example: winraze clean --temp".yellow());
+            }
         }
     }
 }

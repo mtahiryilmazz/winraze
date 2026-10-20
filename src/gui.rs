@@ -1529,6 +1529,137 @@ impl UninstalrApp {
             });
     }
 
+    fn render_debloater_view(&mut self, ui: &mut egui::Ui) {
+        let t = self.t();
+
+        ui.heading(
+            egui::RichText::new(t.debloat_title)
+                .size(20.0)
+                .strong()
+                .color(egui::Color32::WHITE),
+        );
+        ui.label(
+            egui::RichText::new(t.debloat_desc)
+                .size(12.5)
+                .color(egui::Color32::from_rgb(161, 161, 170)),
+        );
+
+        ui.add_space(14.0);
+
+        // Action Toolbar
+        ui.horizontal(|ui| {
+            let telem_btn = egui::Button::new(
+                egui::RichText::new(t.debloat_telemetry_btn)
+                    .color(egui::Color32::WHITE)
+                    .strong()
+                    .size(12.5),
+            )
+            .fill(egui::Color32::from_rgb(16, 185, 129))
+            .rounding(egui::Rounding::same(8.0));
+
+            if ui.add(telem_btn).clicked() {
+                self.trigger_disable_telemetry();
+            }
+
+            ui.add_space(8.0);
+
+            let temp_btn = egui::Button::new(
+                egui::RichText::new(t.debloat_temp_btn)
+                    .color(egui::Color32::WHITE)
+                    .strong()
+                    .size(12.5),
+            )
+            .fill(egui::Color32::from_rgb(59, 130, 246))
+            .rounding(egui::Rounding::same(8.0));
+
+            if ui.add(temp_btn).clicked() {
+                self.trigger_clean_temp();
+            }
+
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let raze_count = self.selected_bloatware.len();
+                let raze_btn = egui::Button::new(
+                    egui::RichText::new(format!("{} ({})", t.debloat_raze_all_btn, raze_count))
+                        .color(egui::Color32::WHITE)
+                        .strong()
+                        .size(13.0),
+                )
+                .fill(if raze_count > 0 {
+                    egui::Color32::from_rgb(196, 43, 28)
+                } else {
+                    egui::Color32::from_rgb(52, 52, 60)
+                })
+                .rounding(egui::Rounding::same(8.0));
+
+                if ui.add_enabled(raze_count > 0 && !self.is_uninstalling, raze_btn).clicked() {
+                    self.trigger_raze_bloatware();
+                }
+            });
+        });
+
+        if let Some(ref msg) = self.debloat_status_message {
+            ui.add_space(10.0);
+            egui::Frame::none()
+                .fill(egui::Color32::from_rgb(26, 48, 38))
+                .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(34, 197, 94)))
+                .rounding(egui::Rounding::same(8.0))
+                .inner_margin(egui::Margin::symmetric(14.0, 8.0))
+                .show(ui, |ui| {
+                    ui.label(egui::RichText::new(format!("✔ {}", msg)).color(egui::Color32::from_rgb(134, 239, 172)).strong());
+                });
+        }
+
+        ui.add_space(12.0);
+
+        // Bloatware Catalog Cards
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            for target in KNOWN_BLOATWARE {
+                let mut is_checked = self.selected_bloatware.contains(target.id);
+
+                egui::Frame::none()
+                    .fill(if is_checked {
+                        egui::Color32::from_rgb(44, 38, 44)
+                    } else {
+                        egui::Color32::from_rgb(32, 32, 38)
+                    })
+                    .stroke(egui::Stroke::new(
+                        1.0_f32,
+                        if is_checked {
+                            egui::Color32::from_rgb(244, 63, 94)
+                        } else {
+                            egui::Color32::from_rgb(44, 44, 52)
+                        },
+                    ))
+                    .rounding(egui::Rounding::same(10.0))
+                    .inner_margin(egui::Margin::symmetric(14.0, 10.0))
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            if ui.checkbox(&mut is_checked, "").changed() {
+                                if is_checked {
+                                    self.selected_bloatware.insert(target.id.to_string());
+                                } else {
+                                    self.selected_bloatware.remove(target.id);
+                                }
+                            }
+
+                            render_pill_badge(ui, target.category, egui::Color32::from_rgb(244, 63, 94));
+                            ui.add_space(6.0);
+
+                            ui.vertical(|ui| {
+                                ui.label(egui::RichText::new(target.name).strong().size(14.0).color(egui::Color32::WHITE));
+                                ui.label(egui::RichText::new(target.description).size(11.5).color(egui::Color32::from_rgb(161, 161, 170)));
+                            });
+
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                ui.label(egui::RichText::new(target.package_pattern).monospace().size(11.0).color(egui::Color32::from_rgb(113, 113, 122)));
+                            });
+                        });
+                    });
+                ui.add_space(6.0);
+            }
+        });
+    }
+
     fn render_settings_view(&mut self, ui: &mut egui::Ui) {
         let t = self.t();
 
@@ -1699,12 +1830,12 @@ pub fn run_gui() -> eframe::Result<()> {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1200.0, 780.0])
             .with_min_inner_size([920.0, 580.0])
-            .with_title("YILLABS DeRust (v0.1.0-beta) - Windows System Health & Deep Cleaner"),
+            .with_title("WinRaze (v0.1.0) - Raze the bloat. Reclaim your Windows. Powered by Rust. 🦀"),
         ..Default::default()
     };
 
     eframe::run_native(
-        "YILLABS_DeRust",
+        "WinRaze",
         native_options,
         Box::new(|cc| Ok(Box::new(UninstalrApp::new(cc)))),
     )
