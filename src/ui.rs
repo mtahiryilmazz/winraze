@@ -55,6 +55,7 @@ impl TerminalUI {
                 AppType::AppXStore => "Store".magenta(),
                 AppType::Portable => "Portable".yellow(),
                 AppType::Leftover => "Leftover".red(),
+                AppType::BrowserExtension => "Extension".cyan(),
             };
 
             let truncated_name = if app.name.chars().count() > 34 {

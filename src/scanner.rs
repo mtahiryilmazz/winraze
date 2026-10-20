@@ -4,7 +4,7 @@ use walkdir::WalkDir;
 use winreg::enums::*;
 use winreg::{RegKey, HKEY};
 
-use crate::model::{AppType, ArtifactKind, InstalledApp, ResidualArtifact, ScanConfig};
+use crate::model::{AppType, ArtifactKind, InstalledApp, ResidualArtifact, ScanConfig, SystemHealthStats};
 
 pub struct SystemScanner {
     config: ScanConfig,
@@ -32,6 +32,9 @@ impl SystemScanner {
         if self.config.detect_leftovers {
             self.scan_orphaned_leftovers(&mut apps);
         }
+
+        // 4. Scan Browser Extensions (Chrome, Edge, Brave)
+        self.scan_browser_extensions(&mut apps);
 
         // Deduplicate apps by name & install location
         let mut deduplicated: Vec<InstalledApp> = Vec::new();
@@ -136,6 +139,8 @@ impl SystemScanner {
                     });
                 }
 
+                let is_protected = is_system_protected_component(&display_name, publisher.as_deref());
+
                 results.push(InstalledApp {
                     id: subkey_name,
                     name: display_name.to_string(),
@@ -151,6 +156,7 @@ impl SystemScanner {
                     estimated_size_bytes: estimated_size,
                     install_date,
                     artifacts,
+                    is_protected,
                 });
             }
         }
@@ -220,6 +226,7 @@ impl SystemScanner {
                             estimated_size_bytes: size,
                             install_date: None,
                             artifacts,
+                            is_protected: false,
                         });
                     }
                 }
@@ -277,6 +284,7 @@ impl SystemScanner {
                                             description: "Orphaned Application / Vendor Directory".to_string(),
                                             size_bytes: Some(size),
                                         }],
+                                        is_protected: false,
                                     });
                                 }
                             }
@@ -414,7 +422,238 @@ impl SystemScanner {
                 }
             }
         }
+
+        // 5. Discover Crash Dumps in %LOCALAPPDATA%\CrashDumps
+        if let Some(local_appdata) = get_env_path("LOCALAPPDATA") {
+            let dumps_dir = local_appdata.join("CrashDumps");
+            if dumps_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&dumps_dir) {
+                    for entry in entries.filter_map(|e| e.ok()) {
+                        let fname = entry.file_name().to_string_lossy().to_lowercase();
+                        if fname.ends_with(".dmp") && (fname.contains(&name_lower) || name_lower.contains(&fname.trim_end_matches(".dmp"))) {
+                            let target_str = entry.path().to_string_lossy().to_string();
+                            if !app.artifacts.iter().any(|a| a.path_or_target == target_str) {
+                                let size = entry.metadata().map_or(0, |m| m.len());
+                                app.artifacts.push(ResidualArtifact {
+                                    kind: ArtifactKind::CrashDump,
+                                    path_or_target: target_str,
+                                    description: "Application Crash Dump File".to_string(),
+                                    size_bytes: Some(size),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 6. Discover Shell Context Menu Handlers (Explorer integration)
+        let shellex_roots = [
+            (HKEY_CLASSES_ROOT, "*\\shellex\\ContextMenuHandlers"),
+            (HKEY_CLASSES_ROOT, "Directory\\shellex\\ContextMenuHandlers"),
+            (HKEY_CLASSES_ROOT, "Folder\\shellex\\ContextMenuHandlers"),
+        ];
+
+        for (hive, sub) in shellex_roots {
+            let root = RegKey::predef(hive);
+            if let Ok(key) = root.open_subkey_with_flags(sub, KEY_READ) {
+                for subname in key.enum_keys().filter_map(|r| r.ok()) {
+                    let sub_lower = subname.to_lowercase();
+                    if sub_lower.contains(&name_lower) || name_lower.contains(&sub_lower) {
+                        let reg_path = format!("HKCR\\{}\\{}", sub, subname);
+                        if !app.artifacts.iter().any(|a| a.path_or_target == reg_path) {
+                            app.artifacts.push(ResidualArtifact {
+                                kind: ArtifactKind::RegistryKey,
+                                path_or_target: reg_path,
+                                description: "Explorer Context Menu Shell Extension Handler".to_string(),
+                                size_bytes: None,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // 7. Discover Startup Approved entries in HKLM and HKCU
+        let startup_keys = [
+            (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run32"),
+            (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run"),
+            (HKEY_CURRENT_USER, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run"),
+        ];
+
+        for (hive, sub) in startup_keys {
+            let root = RegKey::predef(hive);
+            if let Ok(key) = root.open_subkey_with_flags(sub, KEY_READ) {
+                for (val_name, _) in key.enum_values().filter_map(|r| r.ok()) {
+                    let val_lower = val_name.to_lowercase();
+                    if val_lower.contains(&name_lower) || name_lower.contains(&val_lower) {
+                        let reg_path = format!("{}\\{} -> {}", if hive == HKEY_LOCAL_MACHINE { "HKLM" } else { "HKCU" }, sub, val_name);
+                        if !app.artifacts.iter().any(|a| a.path_or_target == reg_path) {
+                            app.artifacts.push(ResidualArtifact {
+                                kind: ArtifactKind::RegistryValue,
+                                path_or_target: reg_path,
+                                description: "Windows Startup Item".to_string(),
+                                size_bytes: None,
+                            });
+                        }
+                    }
+                }
+            }
+        }
     }
+
+    fn scan_browser_extensions(&self, results: &mut Vec<InstalledApp>) {
+        let local_appdata = match get_env_path("LOCALAPPDATA") {
+            Some(p) => p,
+            None => return,
+        };
+
+        let browser_paths = [
+            ("Google Chrome", local_appdata.join("Google\\Chrome\\User Data\\Default\\Extensions")),
+            ("Microsoft Edge", local_appdata.join("Microsoft\\Edge\\User Data\\Default\\Extensions")),
+            ("Brave Browser", local_appdata.join("BraveSoftware\\Brave-Browser\\User Data\\Default\\Extensions")),
+        ];
+
+        for (browser_name, ext_root) in browser_paths {
+            if !ext_root.exists() {
+                continue;
+            }
+
+            if let Ok(entries) = fs::read_dir(&ext_root) {
+                for entry in entries.filter_map(|e| e.ok()) {
+                    let ext_id_path = entry.path();
+                    if !ext_id_path.is_dir() {
+                        continue;
+                    }
+
+                    let ext_id = entry.file_name().to_string_lossy().to_string();
+                    if ext_id.len() < 10 {
+                        continue;
+                    }
+
+                    let mut ext_name = format!("{} Eklentisi ({})", browser_name, &ext_id[..ext_id.len().min(8)]);
+                    let mut version = None;
+                    let size = calculate_dir_size(&ext_id_path);
+
+                    if let Ok(ver_entries) = fs::read_dir(&ext_id_path) {
+                        for ver_entry in ver_entries.filter_map(|e| e.ok()) {
+                            let ver_path = ver_entry.path();
+                            if ver_path.is_dir() {
+                                let manifest_path = ver_path.join("manifest.json");
+                                if manifest_path.exists() {
+                                    if let Ok(manifest_content) = fs::read_to_string(&manifest_path) {
+                                        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&manifest_content) {
+                                            if let Some(n) = v.get("name").and_then(|n| n.as_str()) {
+                                                if !n.starts_with("__MSG_") && !n.is_empty() {
+                                                    ext_name = format!("{} ({})", n, browser_name);
+                                                }
+                                            }
+                                            if let Some(ver) = v.get("version").and_then(|v| v.as_str()) {
+                                                version = Some(ver.to_string());
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    let target_str = ext_id_path.to_string_lossy().to_string();
+                    results.push(InstalledApp {
+                        id: format!("ext_{}_{}", browser_name.replace(' ', "_").to_lowercase(), ext_id),
+                        name: ext_name,
+                        publisher: Some(browser_name.to_string()),
+                        version,
+                        install_location: Some(ext_id_path.clone()),
+                        main_executable: None,
+                        main_shortcut: None,
+                        uninstall_string: None,
+                        quiet_uninstall_string: None,
+                        registry_key: None,
+                        app_type: AppType::BrowserExtension,
+                        estimated_size_bytes: size,
+                        install_date: None,
+                        artifacts: vec![ResidualArtifact {
+                            kind: ArtifactKind::Directory,
+                            path_or_target: target_str,
+                            description: format!("{} Eklenti Dizini", browser_name),
+                            size_bytes: Some(size),
+                        }],
+                        is_protected: false,
+                    });
+                }
+            }
+        }
+    }
+
+    pub fn calculate_system_health(&self, apps: &[InstalledApp]) -> SystemHealthStats {
+        let mut stats = SystemHealthStats::default();
+
+        for app in apps {
+            if app.app_type == AppType::Leftover {
+                stats.leftover_count += 1;
+                stats.leftover_bytes += app.estimated_size_bytes;
+            }
+            if app.is_protected {
+                stats.protected_count += 1;
+            }
+            for art in &app.artifacts {
+                if art.kind == ArtifactKind::CrashDump {
+                    stats.crash_dump_count += 1;
+                    stats.crash_dump_bytes += art.size_bytes.unwrap_or(0);
+                } else if art.kind == ArtifactKind::Shortcut {
+                    let p = Path::new(&art.path_or_target);
+                    if !p.exists() {
+                        stats.broken_shortcuts_count += 1;
+                    }
+                }
+            }
+        }
+
+        let leftover_penalty = (stats.leftover_count as u32 * 2).min(30);
+        let crash_penalty = (stats.crash_dump_count as u32 * 3).min(30);
+        let shortcut_penalty = (stats.broken_shortcuts_count as u32 * 2).min(20);
+        let total_penalty = leftover_penalty + crash_penalty + shortcut_penalty;
+
+        stats.health_score = 100u32.saturating_sub(total_penalty).max(10);
+        stats
+    }
+}
+
+pub fn is_system_protected_component(name: &str, publisher: Option<&str>) -> bool {
+    let lower_name = name.to_lowercase();
+    let lower_pub = publisher.unwrap_or("").to_lowercase();
+
+    // Critical hardware drivers & system runtimes
+    let protected_keywords = [
+        "visual c++",
+        "redistributable",
+        "directx",
+        "nvidia graphics driver",
+        "nvidia physx",
+        "nvidia geforce",
+        "amd software",
+        "amd radeon",
+        "intel(r) graphics",
+        "intel graphics",
+        "realtek high definition audio",
+        "realtek audio",
+        "microsoft .net",
+        ".net framework",
+        "webview2 runtime",
+        "windows defender",
+        "microsoft edge",
+    ];
+
+    if protected_keywords.iter().any(|k| lower_name.contains(k)) {
+        return true;
+    }
+
+    if lower_pub.contains("microsoft") && (lower_name.contains("framework") || lower_name.contains("runtime") || lower_name.contains("service")) {
+        return true;
+    }
+
+    false
 }
 
 pub fn calculate_dir_size(path: &Path) -> u64 {

@@ -29,21 +29,23 @@ This document outlines the strategic development plan and upcoming feature miles
 
 ---
 
-## 📍 Phase 2: Safety, Snapshots & Rollback `[v0.2.0-beta]` — *(In Progress)*
+## 📍 Phase 2: Safety, Snapshots & Rollback `[v0.2.0-beta]` — *(Completed)*
 
-- [ ] **Windows System Restore Point Integration**:
-  - Automatic creation of a System Restore point prior to initiating batch uninstallation.
-- [ ] **Registry & File Backup (Rollback Capability)**:
-  - Export deleted registry keys to `.reg` backup files before deletion.
-  - One-click restore button in case of accidental removal.
-- [ ] **Smart Protection / Whitelist System**:
-  - Built-in protection rules for mission-critical system components:
+- [x] **Windows System Restore Point Integration**:
+  - Automatic creation of a System Restore point prior to initiating batch uninstallation (inspired by IObit `SysRest.dll` & Uninstalr `NoSystemRestore`).
+- [x] **Registry & File Backup (Rollback Capability)**:
+  - Export deleted registry keys to `.reg` backup files before deletion (`%LOCALAPPDATA%\DeRust\Backups\Registry\`).
+- [x] **Smart Protection / Whitelist System**:
+  - Built-in protection rules and visual badge `[🛡️ Sistem Koruması]` for mission-critical system components:
     - Microsoft Visual C++ Redistributables
     - DirectX Runtime
     - Graphics drivers (NVIDIA, AMD, Intel display drivers)
     - Windows Defender & system runtimes
-- [ ] **Custom Exclusion Rules**:
-  - Allow users to mark apps as "Protected / Never Uninstall".
+- [x] **Deep Shell & Residual Purge (Uninstalr & IObit parity)**:
+  - Explorer Context Menu Shell Extension cleaning (`HKCR\*\shellex\ContextMenuHandlers`).
+  - Crash Dump leftover cleaning (`%LOCALAPPDATA%\CrashDumps\*.dmp`).
+  - Windows Startup item cleaning (`StartupApproved\Run32`).
+  - Extended silent switch detection (Inno Setup, NSIS, InstallShield, Wise, Advanced Installer, MSI, Squirrel).
 
 ---
 

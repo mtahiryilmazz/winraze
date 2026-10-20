@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0-beta] - 2026-10-20
+### 🛡️ Safety, Health Dashboard, Browser Extensions & Force Shredder (Distinctive UI Overhaul)
+
+- **Distinctive WinUI 3 Navigation Rail & Dashboard UI**:
+  - Replaced the single-window top header with an original, modern **Fluent Left Navigation Rail** (avoiding generic copycat table designs of Uninstalr or spammy promotional UI of IObit).
+  - Categorized views: 📊 **Sistem Sağlığı (System Health)**, 📦 **Kurulu Yazılımlar (Apps)**, 🧩 **Tarayıcı Eklentileri (Extensions)**, ⚡ **Kalıntılar & Artıklar (Residuals)**, 🔥 **Zorla Kaldırıcı (Force Shredder)**, and ⚙️ **Güvenlik & Tercihler (Settings)**.
+- **Windows System Health Index & 1-Click Optimization**:
+  - Calculates a real-time system health score (%0-100) by analyzing registry residues, crash dumps in `%LOCALAPPDATA%\CrashDumps`, broken shortcuts, and prefetch bloat.
+  - Added **"⚡ 1-Tık Hızlı Sağlık Temizliği"** button and CLI command (`DeRust.exe optimize`) that automatically purges crash dumps, prefetch cache, and broken shortcuts with 1 click.
+- **Multi-Browser Extensions Manager**:
+  - Automatically discovers extensions across Google Chrome, Microsoft Edge, and Brave browsers from their respective User Data directories.
+  - Allows 1-click removal of unwanted browser extensions and displays extension IDs, version, and footprint.
+- **Force Uninstaller & File/Directory Shredder (`DeRust.exe force-clean`)**:
+  - Eliminates stubborn software directories, terminating any processes locking files, unregistering background services, purging related registry keys, and scheduling boot deletions if needed.
+  - Native Windows folder browsing dialog integration via `rfd`.
+- **Pre-Uninstall Security Verification Modal**:
+  - Added a dedicated safety confirmation sheet before executing uninstallation, allowing users to toggle Restore Point creation, `.reg` backup, and AutoKill, with automatic warnings if protected system components are selected.
+- **Windows System Restore Point Integration (Step 0)**:
+  - Automates system restore point creation (`Checkpoint-Computer`) prior to running batch uninstallation pipelines, ensuring users can roll back system state.
+- **Pre-Deletion Registry Backup (`.reg` Rollback Export)**:
+  - Automatically exports all targeted registry subkeys to `%LOCALAPPDATA%\DeRust\Backups\Registry\` before deletion using native Windows registry export.
+- **Smart Protection Shield**:
+  - Automatically detects critical system runtimes and drivers (Microsoft Visual C++, DirectX, NVIDIA/AMD/Intel drivers, .NET runtimes) and displays a `[🛡️ Sistem Koruması]` badge in the GUI to prevent accidental deletion.
+- **Shell Extensions & Context Menu Handlers Purge**:
+  - Detects and cleans orphaned shell context menu handlers in `HKEY_CLASSES_ROOT\*\shellex\ContextMenuHandlers` and `Directory\shellex\ContextMenuHandlers`.
+- **Application Crash Dump Leftover Cleaner**:
+  - Scans `%LOCALAPPDATA%\CrashDumps` for abandoned `.dmp` files left behind by uninstalled applications.
+- **New CLI Subcommands**:
+  - `DeRust.exe health`: Evaluates and displays the Windows System Health Index and telemetry breakdown.
+  - `DeRust.exe optimize`: Executes 1-click quick health optimization.
+  - `DeRust.exe force-clean <path>`: Forcefully eradicates any folder and related registry keys.
+  - `DeRust.exe extensions`: Discovers and lists all browser extensions.
+
+---
+
 ## [0.1.0-beta] - 2026-10-19
 
 ### 🚀 Public Beta Release

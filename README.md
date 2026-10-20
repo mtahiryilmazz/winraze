@@ -36,63 +36,68 @@ Windows'un dahili "Program Ekle veya Kaldır" arayüzü çoğu zaman arkasında 
 
 ## ✨ Features / Özellikler
 
-### 1. 🪟 WinUI 3 & Fluent Desktop GUI
-* **Mica & Acrylic Karanlık Arayüz:** Windows 11 Fluent tasarım standartlarına uygun, yuvarlatılmış köşeler ve modern renk paleti.
-* **Üst Panel KPI İstatistik Kartları:** Toplam yazılım adedi, kaplanan gerçek disk alanı, kaldırılmak üzere seçilen alan ve sahipsiz kalıntılar için anlık sayaçlar.
-* **Modern Kart-Karo (Card Tiles) Mimarisi:** Düzensiz tablolar yerine tip etiketi (`Win32`, `MSI`, `Store`, `Leftover`), yayımcı bilgisi ve altın sarısı disk boyutu çipine sahip akıcı kartlar.
-* **Segmented Filter Bar:** `Tümü`, `Win32`, `MSI`, `Store / UWP` ve `Kalıntılar` arasında tek tıkla anında filtreleme.
-* **Sağ Açılır Derin İnceleme Çekmecesi:** Herhangi bir karta tıklandığında kurulum dizini, kaldırıcı komutu, kısayollar ve tespit edilen tüm kayıt defteri anahtarlarını önizleme imkânı.
+### 1. 🪟 Özgün WinUI 3 & Fluent Cyber-Dark Arayüzü (Kopya Değil, Özel Tasarım)
+* **Sol Navigasyon Rayı (Navigation Rail):** Klasik eski tablolar veya reklam dolu pencereler yerine; sol tarafta dikey olarak konumlandırılmış, modern rozet sayaçlarına (`Badge Counters`) ve renk kodlu göstergelere sahip akıcı menü çubuğu:
+  * 📊 **Sistem Sağlığı & Dashboard:** Windows sistem sağlık endeksi (%0-100), çökme raporu sayaçları ve 1-Tık hızlı temizlik.
+  * 📦 **Kurulu Yazılımlar:** Win32, MSI ve Microsoft Store uygulamaları, arama filtresi ve toplu seçim.
+  * 🧩 **Tarayıcı Eklentileri:** Chrome, Edge ve Brave eklentilerini doğrudan diskten listeleme ve kaldırma.
+  * ⚡ **Kalıntılar & Artıklar:** Sahipsiz AppData, ProgramFiles ve Kayıt Defteri artıklarının analizi.
+  * 🔥 **Zorla Kaldırıcı (Force Shredder):** Kaldırıcısı bozuk programları dosya sistemi ve kilitli süreç seviyesinde yok etme.
+  * ⚙️ **Güvenlik & Tercihler:** Geri yükleme noktası, kayıt defteri yedeği ve kaldırma motoru ayarları.
+* **Sağ Açılır Derin İnceleme Çekmecesi:** Herhangi bir programa tıklandığında kurulum dizini, kaldırıcı komutu, kısayollar, crash dump dosyaları ve kayıt defteri bağlantılarını önizleme imkânı.
+* **Kaldırma Öncesi Güvenlik Doğrulaması:** Kaldırma başlatılmadan önce seçilen programları, sistem geri yükleme noktası ve .reg yedekleme tercihlerini özetleyen modern onay penceresi.
 
-### 2. 🌐 Tam Yerelleştirme (Localization - TR / EN)
+### 2. 🛡️ REA Analizleriyle Entegre Edilen Gelişmiş Güvenlik ve Temizlik Motoru
+* **Adım 0 (Sistem Geri Yükleme Noktası):** Her kaldırma işlemi öncesinde otomatik olarak Windows Sistem Geri Yükleme Noktası (*Checkpoint-Computer*) oluşturulur.
+* **Adım 7 (Kayıt Defteri Geri Alma Yedeği):** Silinen tüm anahtarlar `%LOCALAPPDATA%\DeRust\Backups\Registry\` altına `.reg` formatında yedeklenir. İstediğiniz an çift tıklayarak geri yükleyebilirsiniz.
+* **Çökme Dökümleri & Prefetch Temizliği:** `%LOCALAPPDATA%\CrashDumps` ve Windows Prefetch (`*.pf`) önbelleklerini temizleyerek sistem stabilitesini artırır.
+* **Genişletilmiş Sessiz Kaldırıcı Algılama:** Inno Setup, NSIS, InstallShield (`/s /v"/qn"`), Wise, MSI ve Squirrel paketlerini otomatik tanır ve kullanıcı müdahalesi olmadan sessizce kaldırır.
+* **Kritik Sistem Bileşenleri Koruması (Protected Badge):** Visual C++, DirectX, GPU sürücüleri, .NET Framework gibi kritik bileşenleri turuncu `🛡️ Sistem Koruması` rozetiyle işaretler ve yanlışlıkla silinmelerini önler.
+
+### 3. 🌐 Tam Yerelleştirme (Localization - TR / EN)
 * **Çift Dil:** 🇹🇷 **Türkçe** (Varsayılan) ve 🇬🇧 **English**.
-* Üst çubuktaki tek tıkla `🇹🇷 Türkçe` / `🇬🇧 English` butonu veya ayarlar menüsü üzerinden tüm arayüzü anında tercüme edebilme.
-
-### 3. ⚙️ 9 Aşamalı Derin Kaldırma Boru Hattı (The 9-Step Pipeline)
-1. **Adım 1 & 2 (AutoKill):** Kaldırılacak yazılımın dosyalarını kilitleyen süreçleri (`ToolHelp32` API) ve Windows servislerini (`sc stop`) otomatik tespit edip sonlandırır.
-2. **Adım 3 (Kısayollar):** Başlat Menüsü ve Masaüstü üzerindeki `.lnk`/`.url` dosyalarını temizler.
-3. **Adım 4 (Sessiz MSI):** MSI paketlerini otomatik tespit edip sessiz modda (`msiexec /X {GUID} /quiet /norestart /passive`) çalıştırır.
-4. **Adım 5 (Yerel Kaldırıcı):** InnoSetup (`/VERYSILENT /NORESTART`), NSIS (`/S`) sessiz anahtarlarını enjekte ederek çalıştırır.
-5. **Adım 6 (AppX Store):** UWP / Microsoft Store paketlerini `Remove-AppxPackage` ile temizler.
-6. **Adım 7 (Derin Kayıt Defteri Temizliği):** `HKCU`, `HKLM`, `Wow6432Node`, `AppCompatFlags` altındaki tüm ilişkili anahtarları siler.
-7. **Adım 8 (Dosya Sistemi & Kilitli Dosyalar):** Kurulum dizinini ve `AppData` klasörlerini siler; işletim sistemi tarafından kilitlenen dosyaları Windows API'si `MoveFileExW(..., MOVEFILE_DELAY_UNTIL_REBOOT)` ile yeniden başlatmada temizlenmek üzere kuyruğa alır.
-8. **Adım 9 (Post-Processing & Pruning):** Boş kalan üst klasörleri, kırık kısayolları ve Windows Prefetch (`.pf`) önbellek kayıtlarını budar.
+* Sol alt menüdeki tek tıkla `🇹🇷 Türkçe` / `🇬🇧 English` butonu veya ayarlar menüsü üzerinden tüm arayüzü anında tercüme edebilme.
 
 ---
 
 ## 🚀 Quick Start / Hızlı Başlangıç
 
-Proje doğrudan çift tıklanarak çalışmaya hazır tek bir bağımsız Windows çalıştırılabilir dosyası (`.exe`) olarak üretilmiştir:
-
 ### 🖥️ Grafik Arayüzü (GUI) Başlatma
-Doğrudan [DeRust.exe](file:///C:/Users/BT/.gemini/antigravity-ide/scratch/uninstalr-rs/DeRust.exe) (veya `YILLABS-DeRust.exe`) dosyasına **çift tıklayarak** masaüstü uygulamasını başlatabilirsiniz.
-
-PowerShell üzerinden çalıştırmak için:
+Doğrudan `DeRust.exe` dosyasına çift tıklayarak veya komut satırından parametresiz çağırarak modern WinUI 3 arayüzünü başlatabilirsiniz:
 ```powershell
-cd "C:\Users\BT\.gemini\antigravity-ide\scratch\uninstalr-rs"
-.\DeRust.exe
+cargo run --release
+# veya doğrudan ikili dosya:
+.\target\release\DeRust.exe
 ```
 
 ### ⌨️ Komut Satırı (CLI) Modu
-Aynı ikili dosya arka plan otomasyonları ve sunucular için zengin parametre desteğine sahiptir:
+Aynı ikili dosya otomasyonlar, sistem yöneticileri ve sunucular için gelişmiş parametre desteğine sahiptir:
 
 ```powershell
-# 1. Kurulu tüm uygulamaları ve disk alanlarını listeleme
-.\DeRust.exe list
+# 1. Windows Sistem Sağlık Endeksini Değerlendirme
+.\DeRust.exe health
 
-# 2. Belirli bir uygulamayı arama
+# 2. 1-Tık Hızlı Sağlık Temizliği (CrashDumps, Prefetch, Kırık Kısayollar)
+.\DeRust.exe optimize
+.\DeRust.exe optimize --dry-run   # Simülasyon modu
+
+# 3. Web Tarayıcı Eklentilerini Listeleme (Chrome, Edge, Brave)
+.\DeRust.exe extensions
+
+# 4. Zorla Kaldırıcı & Dosya Öğütücü (Bozuk/kilitli klasörleri temizleme)
+.\DeRust.exe force-clean "C:\Program Files\InatciKlasor"
+.\DeRust.exe force-clean "C:\Program Files\InatciKlasor" --dry-run
+
+# 5. Kurulu tüm uygulamaları ve disk alanlarını listeleme
+.\DeRust.exe list
 .\DeRust.exe list --filter "Chrome"
 
-# 3. Bir uygulamanın kayıt anahtarlarını ve kalıntılarını derinlemesine inceleme
+# 6. Uygulamanın kayıt anahtarlarını ve kalıntılarını derinlemesine inceleme
 .\DeRust.exe inspect "Uygulama Adı"
 
-# 4. Simülasyon modu (Sistemde hiçbir dosya silmeden adımları önizler)
-.\DeRust.exe uninstall "Uygulama Adı" --dry-run
-
-# 5. Gerçek ve sessiz toplu kaldırma
+# 7. Geri Yükleme Noktası ve Kayıt Defteri Yedeğiyle Güvenli Kaldırma
 .\DeRust.exe uninstall "Uygulama 1" "Uygulama 2"
-
-# 6. Yalnızca sahipsiz kalıntıları (leftovers) tarama
-.\DeRust.exe leftovers
+.\DeRust.exe uninstall "Uygulama 1" --dry-run
 ```
 
 ---

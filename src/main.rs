@@ -71,10 +71,41 @@ enum Commands {
         /// Automatically reboot if locked files are scheduled for boot removal
         #[arg(long)]
         auto_reboot: bool,
+
+        /// Skip creating a Windows System Restore point before uninstall
+        #[arg(long)]
+        no_restore_point: bool,
+
+        /// Skip backing up registry keys to .reg files before deletion
+        #[arg(long)]
+        no_backup: bool,
     },
 
     /// Scan system exclusively for orphaned leftover files and directories
     Leftovers,
+
+    /// Calculate Windows System Health Index and telemetry/crash breakdown
+    Health,
+
+    /// 1-Click quick health optimization (CrashDumps, Prefetch cache, broken shortcuts)
+    Optimize {
+        /// Simulation only: preview deletions without modifying system
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// Forcefully eradicate a stubborn software folder, terminating locking processes and removing registry keys
+    ForceClean {
+        /// Absolute folder or file path to eradicate
+        path: String,
+
+        /// Simulation only: preview deletions without modifying system
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// List all discovered browser extensions (Chrome, Edge, Brave)
+    Extensions,
 
     /// Launch the interactive GUI Desktop Application
     Gui,
@@ -148,6 +179,8 @@ fn main() {
             auto_kill,
             clean_empty_dirs,
             auto_reboot,
+            no_restore_point,
+            no_backup,
         }) => {
             TerminalUI::print_banner();
 
@@ -165,6 +198,8 @@ fn main() {
                 auto_kill,
                 auto_reboot,
                 dry_run,
+                create_restore_point: !no_restore_point,
+                backup_registry: !no_backup,
                 clean_empty_dirs,
                 clean_broken_shortcuts: true,
                 clean_prefetch: true,
@@ -192,6 +227,63 @@ fn main() {
 
             println!("{}", "=== Discovered Orphaned Software Leftovers ===".yellow().bold());
             TerminalUI::print_app_list(&leftovers);
+        }
+
+        Some(Commands::Health) => {
+            TerminalUI::print_banner();
+            let scanner = SystemScanner::new(ScanConfig::default());
+            let spinner = TerminalUI::create_spinner("Evaluating Windows System Health Index...");
+            let apps = scanner.scan_all();
+            let health = scanner.calculate_system_health(&apps);
+            spinner.finish_and_clear();
+
+            println!("\n{}", "================ Windows System Health Index ================".cyan().bold());
+            let score_colored = if health.health_score >= 80 {
+                format!("%{}", health.health_score).green().bold()
+            } else if health.health_score >= 60 {
+                format!("%{}", health.health_score).yellow().bold()
+            } else {
+                format!("%{}", health.health_score).red().bold()
+            };
+            println!("  Overall Health Score:       {}", score_colored);
+            println!("  Orphaned Leftovers:         {} (Total: {})", health.leftover_count, ui::format_bytes(health.leftover_bytes));
+            println!("  Crash Reports (CrashDumps): {} (Total: {})", health.crash_dump_count, ui::format_bytes(health.crash_dump_bytes));
+            println!("  Broken Shortcuts:           {}", health.broken_shortcuts_count);
+            println!("  Protected System Apps:      {}", health.protected_count);
+            println!("{}", "=============================================================\n".cyan());
+        }
+
+        Some(Commands::Optimize { dry_run }) => {
+            TerminalUI::print_banner();
+            println!("{}", "[*] Running 1-Click Quick System Health Cleanup...".yellow().bold());
+            let mut options = UninstallOptions::default();
+            options.dry_run = dry_run;
+            let engine = UninstallationEngine::new(options);
+            let report = engine.quick_health_cleanup();
+            TerminalUI::print_uninstall_report(&report);
+        }
+
+        Some(Commands::ForceClean { path, dry_run }) => {
+            TerminalUI::print_banner();
+            println!("{}", format!("[*] Force Clean / Shredding Target Path: {}", path).red().bold());
+            let target_path = std::path::PathBuf::from(&path);
+            let mut options = UninstallOptions::default();
+            options.dry_run = dry_run;
+            let engine = UninstallationEngine::new(options);
+            let report = engine.force_clean_path(&target_path);
+            TerminalUI::print_uninstall_report(&report);
+        }
+
+        Some(Commands::Extensions) => {
+            TerminalUI::print_banner();
+            let scanner = SystemScanner::new(ScanConfig::default());
+            let spinner = TerminalUI::create_spinner("Scanning browser extensions (Chrome, Edge, Brave)...");
+            let apps = scanner.scan_all();
+            spinner.finish_and_clear();
+
+            let extensions: Vec<_> = apps.into_iter().filter(|a| a.app_type == model::AppType::BrowserExtension).collect();
+            println!("{}", format!("=== Discovered Browser Extensions ({}) ===", extensions.len()).magenta().bold());
+            TerminalUI::print_app_list(&extensions);
         }
     }
 }

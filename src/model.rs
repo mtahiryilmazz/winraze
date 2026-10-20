@@ -8,6 +8,19 @@ pub enum AppType {
     AppXStore,
     Portable,
     Leftover,
+    BrowserExtension,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SystemHealthStats {
+    pub health_score: u32,
+    pub leftover_count: usize,
+    pub leftover_bytes: u64,
+    pub crash_dump_count: usize,
+    pub crash_dump_bytes: u64,
+    pub broken_shortcuts_count: usize,
+    pub empty_dirs_count: usize,
+    pub protected_count: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -47,6 +60,7 @@ pub struct InstalledApp {
     pub estimated_size_bytes: u64,
     pub install_date: Option<String>,
     pub artifacts: Vec<ResidualArtifact>,
+    pub is_protected: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,6 +87,8 @@ pub struct UninstallOptions {
     pub auto_kill: bool,
     pub auto_reboot: bool,
     pub dry_run: bool,
+    pub create_restore_point: bool,
+    pub backup_registry: bool,
     pub clean_empty_dirs: bool,
     pub clean_broken_shortcuts: bool,
     pub clean_prefetch: bool,
@@ -85,6 +101,8 @@ impl Default for UninstallOptions {
             auto_kill: true,
             auto_reboot: false,
             dry_run: false,
+            create_restore_point: true,
+            backup_registry: true,
             clean_empty_dirs: true,
             clean_broken_shortcuts: true,
             clean_prefetch: true,
@@ -111,4 +129,6 @@ pub struct UninstallReport {
     pub stopped_services_count: usize,
     pub total_freed_bytes: u64,
     pub requires_reboot: bool,
+    pub restore_point_created: bool,
+    pub registry_backup_path: Option<String>,
 }

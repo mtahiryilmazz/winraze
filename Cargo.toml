@@ -1,9 +1,9 @@
 [package]
-name = "derust"
-version = "0.1.0-beta"
+name = "winraze"
+version = "0.1.0"
 edition = "2021"
-authors = ["M. Tahir Yılmaz <YILLABS>"]
-description = "YILLABS DeRust: Modern, high-performance batch uninstaller & residual cleaner for Windows"
+authors = []
+description = "WinRaze: Raze the bloat. Reclaim your Windows. Powered by Rust. 🦀"
 
 [dependencies]
 winreg = "0.52"
@@ -21,6 +21,11 @@ windows = { version = "0.58", features = [
     "Win32_Storage_FileSystem"
 ] }
 eframe = "0.29"
+rfd = "0.15"
+
+[[bin]]
+name = "winraze"
+path = "src/main.rs"
 
 [[bin]]
 name = "DeRust"
