@@ -26,7 +26,3 @@ rfd = "0.15"
 [[bin]]
 name = "winraze"
 path = "src/main.rs"
-
-[[bin]]
-name = "DeRust"
-path = "src/main.rs"

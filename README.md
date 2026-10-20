@@ -1,134 +1,97 @@
-# 🛡️ YILLABS DeRust
+# 🚀 WinRaze
 
-<div align="center">
+<p align="center">
+  <strong>Raze the bloat. Reclaim your Windows. Powered by Rust. 🦀</strong>
+</p>
 
-**The High-Performance Native Windows Batch Uninstaller & Deep Cleaner**  
-*Sistemin Dijital Pasını Söken Modern Toplu Kaldırıcı*
-
-[![Version](https://img.shields.io/badge/Version-v0.1.0--beta-yellow.svg?style=flat-square)](CHANGELOG.md)
-[![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4.svg?style=flat-square&logo=windows)](https://github.com/mtahiryilmazz)
-[![UI](https://img.shields.io/badge/Design-WinUI%203%20%7C%20Fluent-blue.svg?style=flat-square)](https://github.com/mtahiryilmazz)
-[![Engine](https://img.shields.io/badge/Architecture-9--Step%20Pipeline-success.svg?style=flat-square)](https://github.com/mtahiryilmazz)
-[![Language](https://img.shields.io/badge/Language-TR%20%7C%20EN-purple.svg?style=flat-square)](https://github.com/mtahiryilmazz)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
-
-*Developed by **[YILLABS](ORGANIZATION.md)** · Authored by **M. Tahir Yılmaz***
-
-[Features](#-features--özellikler) • [Roadmap](ROADMAP.md) • [Changelog](CHANGELOG.md) • [Organization](ORGANIZATION.md) • [Quick Start](#-quick-start--hızlı-başlangıç) • [Architecture](#-9-step-pipeline-architecture)
-
-</div>
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4.svg?style=flat-square&logo=windows" alt="Platform">
+  <img src="https://img.shields.io/badge/Language-Rust-orange.svg?style=flat-square&logo=rust" alt="Language">
+  <img src="https://img.shields.io/badge/Version-v0.1.0-blue.svg?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License">
+</p>
 
 ---
 
-> [!NOTE]
-> **Beta Aşamasındadır (Public Beta):**  
-> YILLABS DeRust şu an aktif geliştirme aşamasındadır (**v0.1.0-beta**). Karşılaştığınız hataları veya önerilerinizi [GitHub Issues](https://github.com/mtahiryilmazz/derust/issues) üzerinden paylaşabilirsiniz. Gelecek özellik planlaması için **[ROADMAP.md](ROADMAP.md)** dosyasını inceleyin.
+**WinRaze**, Windows işletim sistemindeki inatçı gereksiz uygulamaları (bloatware), sistem kalıntılarını, önbellekleri ve arkada gizlice çalışan veri toplama (telemetri) servislerini **yerle bir etmek (raze)** için Rust diliyle geliştirilmiş, şimşek hızında ve açık kaynaklı bir uninstaller & debloater aracıdır.
+
+Sisteminizin akıcılığını bozan tüm dijital pası söküp atar, Windows'u ilk günkü saf ve hafif haline geri döndürür.
 
 ---
 
-## 🌟 What is YILLABS DeRust?
+## ✨ Öne Çıkan Özellikler
 
-Windows'un dahili "Program Ekle veya Kaldır" arayüzü çoğu zaman arkasında gigabaytlarca artık veri, yüzlerce yetim kayıt defteri anahtarı ve arka planda çalışmaya devam eden kilitli servisler bırakır.
-
-**YILLABS DeRust**, popüler Windows kaldırıcı *Uninstalr* mimarisinden ilham alarak **YILLABS** çatısı altında sıfırdan geliştirilmiş, tek tıklamayla birden çok yazılımı sessizce ve kökten temizleyen **yüksek performanslı bir açık kaynak masaüstü güç aracıdır**.
-
----
-
-## ✨ Features / Özellikler
-
-### 1. 🪟 Özgün WinUI 3 & Fluent Cyber-Dark Arayüzü (Kopya Değil, Özel Tasarım)
-* **Sol Navigasyon Rayı (Navigation Rail):** Klasik eski tablolar veya reklam dolu pencereler yerine; sol tarafta dikey olarak konumlandırılmış, modern rozet sayaçlarına (`Badge Counters`) ve renk kodlu göstergelere sahip akıcı menü çubuğu:
-  * 📊 **Sistem Sağlığı & Dashboard:** Windows sistem sağlık endeksi (%0-100), çökme raporu sayaçları ve 1-Tık hızlı temizlik.
-  * 📦 **Kurulu Yazılımlar:** Win32, MSI ve Microsoft Store uygulamaları, arama filtresi ve toplu seçim.
-  * 🧩 **Tarayıcı Eklentileri:** Chrome, Edge ve Brave eklentilerini doğrudan diskten listeleme ve kaldırma.
-  * ⚡ **Kalıntılar & Artıklar:** Sahipsiz AppData, ProgramFiles ve Kayıt Defteri artıklarının analizi.
-  * 🔥 **Zorla Kaldırıcı (Force Shredder):** Kaldırıcısı bozuk programları dosya sistemi ve kilitli süreç seviyesinde yok etme.
-  * ⚙️ **Güvenlik & Tercihler:** Geri yükleme noktası, kayıt defteri yedeği ve kaldırma motoru ayarları.
-* **Sağ Açılır Derin İnceleme Çekmecesi:** Herhangi bir programa tıklandığında kurulum dizini, kaldırıcı komutu, kısayollar, crash dump dosyaları ve kayıt defteri bağlantılarını önizleme imkânı.
-* **Kaldırma Öncesi Güvenlik Doğrulaması:** Kaldırma başlatılmadan önce seçilen programları, sistem geri yükleme noktası ve .reg yedekleme tercihlerini özetleyen modern onay penceresi.
-
-### 2. 🛡️ REA Analizleriyle Entegre Edilen Gelişmiş Güvenlik ve Temizlik Motoru
-* **Adım 0 (Sistem Geri Yükleme Noktası):** Her kaldırma işlemi öncesinde otomatik olarak Windows Sistem Geri Yükleme Noktası (*Checkpoint-Computer*) oluşturulur.
-* **Adım 7 (Kayıt Defteri Geri Alma Yedeği):** Silinen tüm anahtarlar `%LOCALAPPDATA%\DeRust\Backups\Registry\` altına `.reg` formatında yedeklenir. İstediğiniz an çift tıklayarak geri yükleyebilirsiniz.
-* **Çökme Dökümleri & Prefetch Temizliği:** `%LOCALAPPDATA%\CrashDumps` ve Windows Prefetch (`*.pf`) önbelleklerini temizleyerek sistem stabilitesini artırır.
-* **Genişletilmiş Sessiz Kaldırıcı Algılama:** Inno Setup, NSIS, InstallShield (`/s /v"/qn"`), Wise, MSI ve Squirrel paketlerini otomatik tanır ve kullanıcı müdahalesi olmadan sessizce kaldırır.
-* **Kritik Sistem Bileşenleri Koruması (Protected Badge):** Visual C++, DirectX, GPU sürücüleri, .NET Framework gibi kritik bileşenleri turuncu `🛡️ Sistem Koruması` rozetiyle işaretler ve yanlışlıkla silinmelerini önler.
-
-### 3. 🌐 Tam Yerelleştirme (Localization - TR / EN)
-* **Çift Dil:** 🇹🇷 **Türkçe** (Varsayılan) ve 🇬🇧 **English**.
-* Sol alt menüdeki tek tıkla `🇹🇷 Türkçe` / `🇬🇧 English` butonu veya ayarlar menüsü üzerinden tüm arayüzü anında tercüme edebilme.
+- **🦀 Rust Gücü ve Hızı:** Sıfır bağımlılık (zero-dependencies), ultra düşük RAM kullanımı ve milisaniyeler içinde tamamlanan derin sistem taraması.
+- **🗑️ Akıllı Uninstaller:** Windows'un normal yollarla kaldırılmasına izin vermediği inatçı sistem uygulamalarını (Cortana, OneDrive vb.) ve arkalarında bıraktığı kayıt defteri (Registry) çöplerini kökünden kazır.
+- **🔒 Güvenli Temizlik:** Varsayılan olarak "salt okunur" (Read-Only) modda başlar. Siz açıkça onay vermeden hiçbir sistem dosyasını zorla silmez.
+- **🚀 Telemetri Engelleme:** Arka planda kaynak tüketen ve verilerinizi izleyen gizli Windows servislerini (`DiagTrack`, `dmwappushservice`) tek tıkla devre dışı bırakır.
+- **📦 Taşınabilir (Portable):** Kurulum gerektirmez, kayıt defterini kirletmez. Sadece tek bir `.exe` dosyasını indirin ve çalıştırın.
+- **🛡️ Sistem Geri Yükleme ve .reg Yedeği:** Kaldırma öncesinde otomatik Windows Sistem Geri Yükleme Noktası (`Checkpoint-Computer`) oluşturur ve silinen anahtarları `%LOCALAPPDATA%\DeRust\Backups\Registry\` altına `.reg` formatında yedekler.
+- **🧩 Tarayıcı Eklenti Yöneticisi:** Google Chrome, Microsoft Edge ve Brave tarayıcılarına kurulu eklentileri doğrudan diskten tespit edip kaldırır.
+- **🔥 Zorla Kaldırıcı & Öğütücü:** Kaldırıcısı bozuk veya Denetim Masasında görünmeyen inatçı klasörleri kilitleyen işlemleri sonlandırıp (`AutoKill`) imha eder.
 
 ---
 
-## 🚀 Quick Start / Hızlı Başlangıç
+## 🛠️ Kullanım ve CLI Komutları
 
-### 🖥️ Grafik Arayüzü (GUI) Başlatma
-Doğrudan `DeRust.exe` dosyasına çift tıklayarak veya komut satırından parametresiz çağırarak modern WinUI 3 arayüzünü başlatabilirsiniz:
-```powershell
-cargo run --release
-# veya doğrudan ikili dosya:
-.\target\release\DeRust.exe
-```
+WinRaze hem modern bir Fluent masaüstü arayüzüne (GUI) sahiptir hem de doğrudan komut satırından (CLI) yönetilebilir.
 
-### ⌨️ Komut Satırı (CLI) Modu
-Aynı ikili dosya otomasyonlar, sistem yöneticileri ve sunucular için gelişmiş parametre desteğine sahiptir:
+```bash
+# Sistemi tarar ve temizlenebilecek alanların raporunu çıkarır (Güvenli Mod)
+winraze scan
 
-```powershell
-# 1. Windows Sistem Sağlık Endeksini Değerlendirme
-.\DeRust.exe health
+# İnteraktif modern masaüstü arayüzünü (GUI) açar
+winraze gui
 
-# 2. 1-Tık Hızlı Sağlık Temizliği (CrashDumps, Prefetch, Kırık Kısayollar)
-.\DeRust.exe optimize
-.\DeRust.exe optimize --dry-run   # Simülasyon modu
+# Onay istemeden sistemdeki tüm bloatware ve kalıntıları temizler, telemetriyi kapatır
+winraze purge --yes
 
-# 3. Web Tarayıcı Eklentilerini Listeleme (Chrome, Edge, Brave)
-.\DeRust.exe extensions
+# Sadece tarayıcı önbelleklerini ve geçici sistem dosyalarını temizler
+winraze clean --temp
 
-# 4. Zorla Kaldırıcı & Dosya Öğütücü (Bozuk/kilitli klasörleri temizleme)
-.\DeRust.exe force-clean "C:\Program Files\InatciKlasor"
-.\DeRust.exe force-clean "C:\Program Files\InatciKlasor" --dry-run
+# Windows Sistem Sağlık Endeksini (%0-100) görüntüler
+winraze health
 
-# 5. Kurulu tüm uygulamaları ve disk alanlarını listeleme
-.\DeRust.exe list
-.\DeRust.exe list --filter "Chrome"
+# 1-Tık hızlı sağlık optimizasyonu (CrashDumps, Prefetch, kırık kısayollar)
+winraze optimize
 
-# 6. Uygulamanın kayıt anahtarlarını ve kalıntılarını derinlemesine inceleme
-.\DeRust.exe inspect "Uygulama Adı"
+# Web tarayıcı eklentilerini (Chrome, Edge, Brave) listeler
+winraze extensions
 
-# 7. Geri Yükleme Noktası ve Kayıt Defteri Yedeğiyle Güvenli Kaldırma
-.\DeRust.exe uninstall "Uygulama 1" "Uygulama 2"
-.\DeRust.exe uninstall "Uygulama 1" --dry-run
+# Bozuk bir yazılım klasörünü zorla imha eder
+winraze force-clean "C:\Program Files\InatciKlasor"
 ```
 
 ---
 
-## 🗺️ Roadmap & Changelog
+## 🛡️ Güvenlik Protokolü
 
-* 🧭 Gelecek sürümler ve geliştirme takvimi: **[ROADMAP.md](ROADMAP.md)**
-* 📝 Sürüm değişiklik geçmişi: **[CHANGELOG.md](CHANGELOG.md)**
-* 🏛️ Organizasyon ve Alt Birimler: **[ORGANIZATION.md](ORGANIZATION.md)**
+WinRaze sistemi "yıkarken" güvenliğinizi ön planda tutar:
+- Tarayıcı geçmişinize ve kayıtlı şifrelerinize asla dokunmaz.
+- O an sistem tarafından kullanılan (kilitli) kritik dosyaları zorla silmez; bir sonraki sistem yeniden başlatmasında silinmek üzere (`MoveFileExW`) kuyruğa alır.
+- Yapılan tüm işlemlerin kaydını `%APPDATA%\WinRaze\raze.log` dosyasına kaydeder, böylece neyin silindiğini her zaman görebilirsiniz.
+- Visual C++, DirectX, GPU ve ses sürücüleri gibi kritik donanım bileşenleri `🛡️ Sistem Koruması` kalkanıyla korunur.
 
 ---
 
-## 🛠️ Kaynak Koddan Derleme (Building from Source)
+## 🚀 Hızlı Başlangıç (Geliştiriciler İçin)
 
-```powershell
-# Repoyu klonlayın
-git clone https://github.com/mtahiryilmazz/derust.git
-cd derust
+Projeyi yerelinizde derlemek için sisteminizde **Rust toolchain** kurulu olmalıdır.
 
-# Release modunda derleyin
+```bash
+# Projeyi klonlayın
+git clone https://github.com/mtahiryilmazz/winraze.git
+cd winraze
+
+# Release modunda optimize ederek derleyin
 cargo build --release
 
-# Derlenen binary: target/release/DeRust.exe
-.\target\release\DeRust.exe
+# Derlenen çalıştırılabilir dosyayı başlatın
+./target/release/winraze.exe scan
 ```
 
 ---
 
-## 🏢 Hakkında & Lisans
+## 📄 Lisans
 
-* **Çatı Organizasyon:** **[YILLABS](ORGANIZATION.md)**
-* **Bağlı Birim:** **YILLABS Systems** (İşletim sistemi araçları, performans ve sistem optimizasyonu)
-* **Geliştirici & Kurucu:** M. Tahir Yılmaz ([@mtahiryilmazz](https://github.com/mtahiryilmazz))
-* **Lisans:** [MIT License](LICENSE) — Telif Hakkı (c) 2026 YILLABS. Açık kaynak ve özgürce kullanılabilir.
+Bu proje **MIT Lisansı** ile korunmaktadır. Detaylar için [LICENSE](LICENSE) dosyasına göz atabilirsiniz.
