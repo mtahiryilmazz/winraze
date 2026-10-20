@@ -9,7 +9,29 @@ pub enum AppType {
     Portable,
     Leftover,
     BrowserExtension,
+    Tracked,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrackedRegValue {
+    pub key_path: String,
+    pub value_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrackedAppProfile {
+    pub id: String,
+    pub name: String,
+    pub version: Option<String>,
+    pub install_date: String,
+    pub installer_path: Option<String>,
+    pub created_files: Vec<PathBuf>,
+    pub created_directories: Vec<PathBuf>,
+    pub created_registry_keys: Vec<String>,
+    pub created_registry_values: Vec<TrackedRegValue>,
+    pub total_size_bytes: u64,
+}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SystemHealthStats {

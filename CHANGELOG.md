@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-10-20
+### 📷 Kurulum İzleyici & Sistem Anlık Görüntüsü (Snapshot & Install Tracker Engine)
+
+- **Kurulum Öncesi ve Sonrası Sistem Fotoğrafı (Pre/Post-Install Snapshot)**:
+  - Hedef kurulum çalıştırılmadan önce `ProgramFiles`, `AppData`, `ProgramData`, Masaüstü/Başlat kısayolları ve kritik kayıt defteri kovanlarını (`HKLM\Software`, `HKCU\Software`, `HKLM\Software\WOW6432Node`) tarayarak belleğe kaydeder.
+  - Kurulum tamamlandıktan sonra aynı alanlar tekrar taranır ve iki durum arasındaki fark (Diff Engine) otomatik hesaplanır.
+- **Akıllı Gürültü Filtresi (Noise Filtering)**:
+  - Windows Update, Defender, Prefetch, tarayıcı önbellekleri ve geçici sistem logları filtrelenerek sadece programa ait yeni dosyalar ve kayıt defteri anahtarları ayıklanır.
+- **Kayıt Depolama & Profillendirme (`%LOCALAPPDATA%\WinRaze\Tracked\<id>.json`)**:
+  - Tespit edilen tüm oluşturulmuş dosyalar, klasörler ve kayıt defteri anahtarları izleme profili olarak diske kaydedilir.
+- **Sıfır Artık Kaldırma (Zero-Leftover Uninstallation)**:
+  - İzlenerek kurulan uygulamalar normal kaldırıcıya ihtiyaç kalmadan doğrudan izleme günlüğündeki tüm girdiler silinerek %100 artık kalıntısız temizlenir.
+- **Yeni GUI ve CLI Komutları**:
+  - **Masaüstü GUI**: Sol navigasyon rayına `🔍 Kurulum İzleyici` sekmesi, program kurma sihirbazı ve kayıtlı izlenen programlar listesi eklendi.
+  - **CLI**: `winraze track <setup.exe>`, `winraze tracked-list` ve `winraze tracked-remove <id>` komutları kullanıma sunuldu.
+
+---
+
 ## [0.2.0-beta] - 2026-10-20
 ### 🛡️ Safety, Health Dashboard, Browser Extensions & Force Shredder (Distinctive UI Overhaul)
 

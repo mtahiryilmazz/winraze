@@ -35,7 +35,15 @@ impl UninstallationEngine {
             registry_backup_path: None,
         };
 
-        println!("\n[+] Starting DeRust Deep Clean Pipeline for: {}", app.name);
+        println!("\n[+] Starting WinRaze Deep Clean Pipeline for: {}", app.name);
+
+        if app.app_type == AppType::Tracked {
+            let profiles = crate::tracker::InstallTracker::load_all_profiles();
+            if let Some(prof) = profiles.iter().find(|p| p.id == app.id || p.name == app.name) {
+                println!("[*] Executing zero-leftover tracked uninstallation for: {}", prof.name);
+                return crate::tracker::InstallTracker::uninstall_profile(prof, self.options.dry_run);
+            }
+        }
 
         // ==========================================
         // Step 0: Windows System Restore Point Creation

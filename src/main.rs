@@ -4,6 +4,7 @@ mod i18n;
 mod model;
 mod process_killer;
 mod scanner;
+mod tracker;
 mod ui;
 mod uninstaller;
 
@@ -139,6 +140,29 @@ enum Commands {
 
     /// List all discovered browser extensions (Chrome, Edge, Brave)
     Extensions,
+
+    /// Track an installation in real-time by taking pre/post system snapshots and creating a zero-leftover profile
+    Track {
+        /// Absolute path to the setup / installer executable (.exe, .msi)
+        installer: String,
+
+        /// Custom application name (optional, derived from file name by default)
+        #[arg(short, long)]
+        name: Option<String>,
+    },
+
+    /// List all tracked applications monitored by WinRaze
+    TrackedList,
+
+    /// Remove a tracked application using its exact installation log profile
+    TrackedRemove {
+        /// Application name or tracked profile ID
+        target: String,
+
+        /// Simulation only: preview deletions without modifying system
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 fn main() {
@@ -358,5 +382,84 @@ fn main() {
                 println!("{}", "[-] Specify what to clean, for example: winraze clean --temp".yellow());
             }
         }
+
+        Some(Commands::Track { installer, name }) => {
+            TerminalUI::print_banner();
+            let installer_path = std::path::PathBuf::from(&installer);
+            if !installer_path.exists() {
+                eprintln!("{}", format!("[-] Kurulum dosyası bulunamadı: {}", installer).red());
+                return;
+            }
+
+            let app_name = name.unwrap_or_else(|| {
+                installer_path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("Tracked Application")
+                    .to_string()
+            });
+
+            println!("{}", format!("🚀 WinRaze Kurulum İzleyici Başlatılıyor: {}", app_name).cyan().bold());
+            println!("{}", "[1/4] Kurulum öncesi sistem fotoğrafı (Registry & Dosyalar) alınıyor...".yellow());
+            let pre_snap = tracker::InstallTracker::take_snapshot();
+            println!("{}", format!("  ✔ Ön tarama tamamlandı ({} dosya, {} kayıt defteri anahtarı).", pre_snap.fs.files.len(), pre_snap.reg.keys.len()).green());
+
+            println!("\n{}", "[2/4] Kurulum programı çalıştırılıyor... Lütfen kurulumu tamamlayın.".magenta().bold());
+            match tracker::InstallTracker::execute_installer_and_wait(&installer_path) {
+                Ok(_) => {
+                    println!("{}", "  ✔ Kurulum tamamlandı veya pencere kapandı.".green());
+                }
+                Err(e) => {
+                    eprintln!("{}", format!("[-] Kurulum çalıştırılırken hata: {}", e).red());
+                    return;
+                }
+            }
+
+            println!("\n{}", "[3/4] Kurulum sonrası sistem fotoğrafı taranıyor ve fark (Diff) hesaplanıyor...".yellow());
+            let post_snap = tracker::InstallTracker::take_snapshot();
+            let profile = tracker::InstallTracker::compute_diff(&pre_snap, &post_snap, app_name.clone(), Some(installer.clone()));
+            println!("{}", format!("  ✔ {} yeni dosya, {} yeni kayıt defteri anahtarı tespit edildi (Boyut: {}).",
+                profile.created_files.len(),
+                profile.created_registry_keys.len(),
+                ui::format_bytes(profile.total_size_bytes)
+            ).green());
+
+            println!("\n{}", "[4/4] Kurulum profili kaydediliyor...".cyan());
+            match tracker::InstallTracker::save_profile(&profile) {
+                Ok(path) => {
+                    println!("{}", format!("✔ Kurulum başarıyla izlendi ve kaydedildi: {:?}", path).green().bold());
+                    println!("{}", "Artık bu programı kaldırmak istediğinizde 'winraze tracked-remove' ile tek kalıntı bırakmadan silebilirsiniz.".yellow());
+                }
+                Err(e) => {
+                    eprintln!("{}", format!("[-] Profil kaydedilemedi: {}", e).red());
+                }
+            }
+        }
+
+        Some(Commands::TrackedList) => {
+            TerminalUI::print_banner();
+            let profiles = tracker::InstallTracker::load_all_profiles();
+            println!("{}", format!("=== WinRaze İzlenmiş Kurulumlar ({}) ===", profiles.len()).cyan().bold());
+            if profiles.is_empty() {
+                println!("{}", "Henüz izlenerek kurulmuş bir program bulunmuyor. Bir setup'ı izlemek için: winraze track <setup.exe>".yellow());
+            } else {
+                let apps: Vec<_> = profiles.iter().map(|p| tracker::InstallTracker::profile_to_installed_app(p)).collect();
+                TerminalUI::print_app_list(&apps);
+            }
+        }
+
+        Some(Commands::TrackedRemove { target, dry_run }) => {
+            TerminalUI::print_banner();
+            let profiles = tracker::InstallTracker::load_all_profiles();
+            let target_lower = target.to_lowercase();
+            if let Some(prof) = profiles.into_iter().find(|p| p.id.to_lowercase() == target_lower || p.name.to_lowercase().contains(&target_lower)) {
+                println!("{}", format!("[*] İzlenmiş Kurulum Kaldırılıyor: {} (Profil: {})", prof.name, prof.id).magenta().bold());
+                let report = tracker::InstallTracker::uninstall_profile(&prof, dry_run);
+                TerminalUI::print_uninstall_report(&report);
+            } else {
+                eprintln!("{}", format!("[-] İzlenen program profili bulunamadı: '{}'", target).red());
+            }
+        }
     }
 }
+

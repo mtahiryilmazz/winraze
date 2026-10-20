@@ -16,6 +16,7 @@ use crate::uninstaller::UninstallationEngine;
 pub enum ActiveNavTab {
     Dashboard,
     Applications,
+    Tracker,
     Debloater,
     BrowserExtensions,
     Leftovers,
@@ -29,6 +30,7 @@ enum FilterTab {
     Win32,
     Msi,
     Store,
+    Tracked,
 }
 
 enum BackgroundMsg {
@@ -46,6 +48,8 @@ enum BackgroundMsg {
     QuickCleanupFinished(UninstallReport),
     ForceCleanFinished(UninstallReport),
     DebloatFinished(String),
+    TrackerProgress(String),
+    TrackerFinished(Result<PathBuf, String>),
 }
 
 pub struct UninstalrApp {
@@ -64,6 +68,12 @@ pub struct UninstalrApp {
 
     // Debloater state
     debloat_status_message: Option<String>,
+
+    // Tracker state
+    tracker_installer_input: String,
+    tracker_custom_name: String,
+    tracker_status_message: Option<String>,
+    tracker_is_busy: bool,
 
     // Force Shredder state
     force_path_input: String,
@@ -108,6 +118,10 @@ impl UninstalrApp {
             options: UninstallOptions::default(),
             current_lang: Language::Turkish,
             debloat_status_message: None,
+            tracker_installer_input: String::new(),
+            tracker_custom_name: String::new(),
+            tracker_status_message: None,
+            tracker_is_busy: false,
             force_path_input: String::new(),
             force_status_message: None,
             is_uninstalling: false,
@@ -122,6 +136,50 @@ impl UninstalrApp {
 
         app.trigger_scan();
         app
+    }
+
+    fn trigger_track_installation(&mut self) {
+        let installer_path = PathBuf::from(&self.tracker_installer_input);
+        if !installer_path.exists() {
+            self.tracker_status_message = Some("Kurulum dosyası bulunamadı / Installer file not found".to_string());
+            return;
+        }
+
+        let app_name = if !self.tracker_custom_name.trim().is_empty() {
+            self.tracker_custom_name.trim().to_string()
+        } else {
+            installer_path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("Tracked Application")
+                .to_string()
+        };
+
+        self.tracker_is_busy = true;
+        self.tracker_status_message = Some(self.t().tracker_status_presnap.to_string());
+
+        let tx = self.tx.clone();
+        let installer_path_clone = installer_path.clone();
+        let installer_str = self.tracker_installer_input.clone();
+
+        thread::spawn(move || {
+            let _ = tx.send(BackgroundMsg::TrackerProgress("Pre-snapshot alınıyor...".to_string()));
+            let pre_snap = crate::tracker::InstallTracker::take_snapshot();
+
+            let _ = tx.send(BackgroundMsg::TrackerProgress("Kurulum çalıştırılıyor... Kurulum penceresini tamamlayın.".to_string()));
+            match crate::tracker::InstallTracker::execute_installer_and_wait(&installer_path_clone) {
+                Ok(_) => {
+                    let _ = tx.send(BackgroundMsg::TrackerProgress("Post-snapshot taranıyor ve fark (Diff) hesaplanıyor...".to_string()));
+                    let post_snap = crate::tracker::InstallTracker::take_snapshot();
+                    let profile = crate::tracker::InstallTracker::compute_diff(&pre_snap, &post_snap, app_name, Some(installer_str));
+                    let res = crate::tracker::InstallTracker::save_profile(&profile);
+                    let _ = tx.send(BackgroundMsg::TrackerFinished(res));
+                }
+                Err(e) => {
+                    let _ = tx.send(BackgroundMsg::TrackerFinished(Err(e)));
+                }
+            }
+        });
     }
 
     fn t(&self) -> &'static Translations {
@@ -380,6 +438,23 @@ impl eframe::App for UninstalrApp {
                     self.debloat_status_message = Some(msg);
                     self.trigger_scan();
                 }
+                BackgroundMsg::TrackerProgress(msg) => {
+                    self.tracker_status_message = Some(msg);
+                }
+                BackgroundMsg::TrackerFinished(res) => {
+                    self.tracker_is_busy = false;
+                    match res {
+                        Ok(p) => {
+                            self.tracker_status_message = Some(format!("✔ Kurulum izlendi ve profil kaydedildi: {:?}", p.file_name().unwrap_or_default()));
+                            self.tracker_installer_input.clear();
+                            self.tracker_custom_name.clear();
+                            self.trigger_scan();
+                        }
+                        Err(e) => {
+                            self.tracker_status_message = Some(format!("[-] Kurulum izlenemedi: {}", e));
+                        }
+                    }
+                }
             }
         }
 
@@ -466,6 +541,16 @@ impl eframe::App for UninstalrApp {
                     t.nav_apps,
                     Some(regular_apps_count.to_string()),
                     egui::Color32::from_rgb(59, 130, 246),
+                );
+
+                let tracked_count = self.apps.iter().filter(|a| a.app_type == AppType::Tracked).count();
+                render_nav_item(
+                    ui,
+                    &mut self.active_nav,
+                    ActiveNavTab::Tracker,
+                    t.nav_tracker,
+                    Some(tracked_count.to_string()),
+                    egui::Color32::from_rgb(14, 165, 233),
                 );
 
                 render_nav_item(
@@ -689,6 +774,9 @@ impl eframe::App for UninstalrApp {
                     }
                     ActiveNavTab::Applications => {
                         self.render_applications_view(ui, sel_count, total_sel_bytes);
+                    }
+                    ActiveNavTab::Tracker => {
+                        self.render_tracker_view(ui);
                     }
                     ActiveNavTab::Debloater => {
                         self.render_debloater_view(ui);
@@ -1063,6 +1151,7 @@ impl UninstalrApp {
                         render_filter_tab(ui, &mut self.filter_tab, FilterTab::Win32, t.tab_win32);
                         render_filter_tab(ui, &mut self.filter_tab, FilterTab::Msi, t.tab_msi);
                         render_filter_tab(ui, &mut self.filter_tab, FilterTab::Store, t.tab_store);
+                        render_filter_tab(ui, &mut self.filter_tab, FilterTab::Tracked, t.tab_tracked);
                     });
                 });
 
@@ -1112,6 +1201,7 @@ impl UninstalrApp {
                     FilterTab::Win32 => a.app_type == AppType::Win32,
                     FilterTab::Msi => a.app_type == AppType::Msi,
                     FilterTab::Store => a.app_type == AppType::AppXStore,
+                    FilterTab::Tracked => a.app_type == AppType::Tracked,
                 };
                 if !tab_match {
                     return false;
@@ -1201,6 +1291,7 @@ impl UninstalrApp {
                                 AppType::Portable => ("Portable", egui::Color32::from_rgb(234, 179, 8)),
                                 AppType::Leftover => ("Leftover", egui::Color32::from_rgb(239, 68, 68)),
                                 AppType::BrowserExtension => ("Extension", egui::Color32::from_rgb(6, 182, 212)),
+                                AppType::Tracked => ("Tracked", egui::Color32::from_rgb(14, 165, 233)),
                             };
                             render_pill_badge(ui, badge_text, badge_color);
 
@@ -1527,6 +1618,192 @@ impl UninstalrApp {
                     ui.label(egui::RichText::new(status).color(egui::Color32::from_rgb(34, 197, 94)));
                 }
             });
+    }
+
+    fn render_tracker_view(&mut self, ui: &mut egui::Ui) {
+        let t = self.t();
+
+        ui.heading(
+            egui::RichText::new(t.tracker_title)
+                .size(20.0)
+                .strong()
+                .color(egui::Color32::WHITE),
+        );
+        ui.label(
+            egui::RichText::new(t.tracker_desc)
+                .size(12.5)
+                .color(egui::Color32::from_rgb(161, 161, 170)),
+        );
+
+        ui.add_space(14.0);
+
+        // Tracking Setup Wizard Card
+        egui::Frame::none()
+            .fill(egui::Color32::from_rgb(32, 32, 40))
+            .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(50, 50, 64)))
+            .rounding(egui::Rounding::same(12.0))
+            .inner_margin(egui::Margin::symmetric(20.0, 18.0))
+            .show(ui, |ui| {
+                ui.label(egui::RichText::new("1. Kurulum Dosyasını Seçin (.exe veya .msi)").strong().size(13.5).color(egui::Color32::from_rgb(56, 189, 248)));
+                ui.add_space(6.0);
+
+                ui.horizontal(|ui| {
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.tracker_installer_input)
+                            .desired_width(ui.available_width() - 150.0)
+                            .hint_text(t.tracker_path_hint)
+                            .margin(egui::Margin::symmetric(10.0, 8.0)),
+                    );
+
+                    let browse_btn = egui::Button::new(t.tracker_btn_browse)
+                        .fill(egui::Color32::from_rgb(48, 48, 58))
+                        .rounding(egui::Rounding::same(8.0));
+
+                    if ui.add_sized([135.0, 32.0], browse_btn).clicked() {
+                        if let Some(file) = rfd::FileDialog::new()
+                            .add_filter("Kurulum Dosyası (Installer)", &["exe", "msi"])
+                            .pick_file()
+                        {
+                            self.tracker_installer_input = file.display().to_string();
+                            if self.tracker_custom_name.trim().is_empty() {
+                                if let Some(stem) = file.file_stem().and_then(|s| s.to_str()) {
+                                    self.tracker_custom_name = stem.to_string();
+                                }
+                            }
+                        }
+                    }
+                });
+
+                ui.add_space(10.0);
+                ui.label(egui::RichText::new("2. Program Adı (İsteğe Bağlı):").size(12.5).color(egui::Color32::from_rgb(212, 212, 216)));
+                ui.add_space(4.0);
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.tracker_custom_name)
+                        .desired_width(320.0)
+                        .hint_text("Örn: Google Chrome, Notepad++...")
+                        .margin(egui::Margin::symmetric(10.0, 6.0)),
+                );
+
+                ui.add_space(14.0);
+
+                let file_exists = Path::new(&self.tracker_installer_input).exists() && !self.tracker_installer_input.trim().is_empty();
+
+                let install_btn = egui::Button::new(
+                    egui::RichText::new(t.tracker_btn_install)
+                        .size(14.0)
+                        .strong()
+                        .color(egui::Color32::WHITE),
+                )
+                .fill(if file_exists && !self.tracker_is_busy {
+                    egui::Color32::from_rgb(14, 165, 233)
+                } else {
+                    egui::Color32::from_rgb(60, 60, 68)
+                })
+                .rounding(egui::Rounding::same(8.0));
+
+                if ui.add_sized([240.0, 38.0], install_btn).clicked() && file_exists && !self.tracker_is_busy {
+                    self.trigger_track_installation();
+                }
+
+                if self.tracker_is_busy {
+                    ui.add_space(10.0);
+                    ui.horizontal(|ui| {
+                        ui.spinner();
+                        if let Some(ref msg) = self.tracker_status_message {
+                            ui.label(egui::RichText::new(msg).color(egui::Color32::from_rgb(56, 189, 248)).strong());
+                        }
+                    });
+                } else if let Some(ref status) = self.tracker_status_message {
+                    ui.add_space(10.0);
+                    ui.label(egui::RichText::new(status).color(egui::Color32::from_rgb(34, 197, 94)).strong());
+                }
+            });
+
+        ui.add_space(18.0);
+
+        // Section: Tracked Applications List
+        let tracked_apps: Vec<&InstalledApp> = self.apps.iter().filter(|a| a.app_type == AppType::Tracked).collect();
+
+        ui.horizontal(|ui| {
+            ui.heading(
+                egui::RichText::new(format!("Kayıtlı ve İzlenmiş Kurulumlar ({})", tracked_apps.len()))
+                    .size(15.0)
+                    .color(egui::Color32::WHITE),
+            );
+            render_pill_badge(ui, "Sıfır Kalıntı Garantisi", egui::Color32::from_rgb(14, 165, 233));
+        });
+
+        ui.add_space(8.0);
+
+        if tracked_apps.is_empty() {
+            egui::Frame::none()
+                .fill(egui::Color32::from_rgb(28, 28, 34))
+                .rounding(egui::Rounding::same(10.0))
+                .inner_margin(egui::Margin::symmetric(20.0, 30.0))
+                .show(ui, |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.label(egui::RichText::new("📷").size(32.0));
+                        ui.add_space(6.0);
+                        ui.label(
+                            egui::RichText::new("Henüz izlenerek kurulmuş bir program bulunmuyor.")
+                                .strong()
+                                .size(14.0)
+                                .color(egui::Color32::WHITE),
+                        );
+                        ui.label(
+                            egui::RichText::new("Yukarıdaki alandan bir kurulum dosyası (.exe/.msi) seçip 'Kurulumu Başlat & Canlı İzle' butonuna tıklayarak ilk programınızı izleyebilirsiniz.")
+                                .size(12.0)
+                                .color(egui::Color32::from_rgb(161, 161, 170)),
+                        );
+                    });
+                });
+        } else {
+            let mut to_uninstall_id: Option<String> = None;
+
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                for app in tracked_apps {
+                    egui::Frame::none()
+                        .fill(egui::Color32::from_rgb(32, 32, 40))
+                        .stroke(egui::Stroke::new(1.0_f32, egui::Color32::from_rgb(44, 44, 56)))
+                        .rounding(egui::Rounding::same(10.0))
+                        .inner_margin(egui::Margin::symmetric(14.0, 10.0))
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                render_pill_badge(ui, "İzlenmiş", egui::Color32::from_rgb(14, 165, 233));
+                                ui.label(egui::RichText::new(&app.name).strong().size(14.0).color(egui::Color32::WHITE));
+                                if let Some(ref date) = app.install_date {
+                                    render_pill_badge(ui, date, egui::Color32::from_rgb(113, 113, 122));
+                                }
+                                render_pill_badge(ui, &format_bytes(app.estimated_size_bytes), egui::Color32::from_rgb(234, 179, 8));
+
+                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                    let remove_btn = egui::Button::new(
+                                        egui::RichText::new("🗑 Sıfır Artıkla Kaldır")
+                                            .size(12.0)
+                                            .strong()
+                                            .color(egui::Color32::WHITE),
+                                    )
+                                    .fill(egui::Color32::from_rgb(196, 43, 28))
+                                    .rounding(egui::Rounding::same(6.0));
+
+                                    if ui.add(remove_btn).clicked() {
+                                        to_uninstall_id = Some(app.id.clone());
+                                    }
+                                });
+                            });
+                        });
+                    ui.add_space(6.0);
+                }
+            });
+
+            if let Some(id) = to_uninstall_id {
+                if !self.is_uninstalling {
+                    self.selected_ids.clear();
+                    self.selected_ids.insert(id);
+                    self.trigger_uninstall_confirmed();
+                }
+            }
+        }
     }
 
     fn render_debloater_view(&mut self, ui: &mut egui::Ui) {

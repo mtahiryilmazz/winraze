@@ -56,7 +56,15 @@ impl SystemScanner {
 
         // Deepen artifacts collection (shortcuts, appdata, prefetch, registry)
         for app in &mut deduplicated {
-            self.enrich_app_artifacts(app);
+            if app.app_type != AppType::Tracked {
+                self.enrich_app_artifacts(app);
+            }
+        }
+
+        // 5. Append Tracked Installation Profiles
+        let tracked_profiles = crate::tracker::InstallTracker::load_all_profiles();
+        for profile in tracked_profiles {
+            deduplicated.push(crate::tracker::InstallTracker::profile_to_installed_app(&profile));
         }
 
         deduplicated.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
